@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calendar</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        /* Add your styles here */
+    </style>
+</head>
+<body>
+    <div class="calendar-container">
+        <!-- 添加 Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database-compat.js"></script>
+
+        <script>
+            // Firebase 配置
+            const firebaseConfig = {
+                // 這裡需要填入您的 Firebase 配置信息
+                apiKey: "YOUR_API_KEY",
+                authDomain: "YOUR_AUTH_DOMAIN",
+                databaseURL: "YOUR_DATABASE_URL",
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_STORAGE_BUCKET",
+                messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+                appId: "YOUR_APP_ID"
+            };
+
+            // 初始化 Firebase
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+
+            // 加載日曆事件
+            function loadCalendarEvents() {
+                const userId = firebase.auth().currentUser?.uid || 'anonymous';
+                const eventsRef = database.ref(`users/${userId}/calendarEvents`);
+                
+                eventsRef.on('value', (snapshot) => {
+                    const events = snapshot.val() || {};
+                    updateCalendarDisplay(events);
+                });
+            }
+
+            // 更新日曆顯示
+            function updateCalendarDisplay(events) {
+                const calendar = document.getElementById('calendar');
+                calendar.innerHTML = '';
+
+                const today = new Date();
+                const currentMonth = today.getMonth();
+                const currentYear = today.getFullYear();
+
+                // 創建月份標題
+                const monthTitle = document.createElement('div');
+                monthTitle.className = 'month-title';
+                monthTitle.textContent = `${currentYear}年${currentMonth + 1}月`;
+                calendar.appendChild(monthTitle);
+
+                // 創建星期標題
+                const weekdays = ['日', '一', '二', '三', '四', '五', '六'];
+                const weekdaysRow = document.createElement('div');
+                weekdaysRow.className = 'weekdays';
+                weekdays.forEach(day => {
+                    const dayElement = document.createElement('div');
+                    dayElement.textContent = day;
+                    weekdaysRow.appendChild(dayElement);
+                });
+                calendar.appendChild(weekdaysRow);
+
+                // 創建日期格子
+                const firstDay = new Date(currentYear, currentMonth, 1);
+                const lastDay = new Date(currentYear, currentMonth + 1, 0);
+                const daysGrid = document.createElement('div');
+                daysGrid.className = 'days';
+
+                // 添加空白格子
+                for (let i = 0; i < firstDay.getDay(); i++) {
+                    const emptyDay = document.createElement('div');
+                    emptyDay.className = 'day empty';
+                    daysGrid.appendChild(emptyDay);
+                }
+
+                // 添加日期格子
+                for (let date = 1; date <= lastDay.getDate(); date++) {
+                    const dayElement = document.createElement('div');
+                    dayElement.className = 'day';
+                    dayElement.textContent = date;
+
+                    const dateKey = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}-${String(date).padStart(2, '0')}`;
+                    const dayEvents = events[dateKey] || [];
+
+                    if (dayEvents.length > 0) {
+                        const eventsList = document.createElement('div');
+                        eventsList.className = 'events-list';
+                        dayEvents.forEach(event => {
+                            const eventElement = document.createElement('div');
+                            eventElement.className = `event ${event.type.toLowerCase()}`;
+                            eventElement.textContent = `${event.type} ${event.distance}km`;
+                            eventsList.appendChild(eventElement);
+                        });
+                        dayElement.appendChild(eventsList);
+                    }
+
+                    daysGrid.appendChild(dayElement);
+                }
+
+                calendar.appendChild(daysGrid);
+            }
+
+            // 頁面加載時初始化日曆
+            document.addEventListener('DOMContentLoaded', () => {
+                loadCalendarEvents();
+            });
+        </script>
+    </div>
+</body>
+</html> 

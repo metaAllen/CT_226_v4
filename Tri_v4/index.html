@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首頁 - 三項都會累</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        }
+        body {
+            width: 100vw;
+            min-height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            height: 100dvh;
+            min-height: 0;
+            background: rgba(34, 40, 49, 0.98);
+            border-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            overflow: hidden;
+            border: 1.5px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top);
+            position: relative;
+        }
+        .header {
+            width: 100%;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            color: white;
+            text-align: center;
+            padding: 20px 0 16px 0;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .content {
+            flex: 1;
+            width: 100%;
+            padding: 20px;
+            padding-bottom: 80px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        /* 自定義滾動條樣式 */
+        .content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .content::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+        .content::-webkit-scrollbar-thumb {
+            background: rgba(0,188,212,0.3);
+            border-radius: 4px;
+        }
+        .content::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,188,212,0.5);
+        }
+        /* Firefox 滾動條樣式 */
+        .content {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,188,212,0.3) rgba(255,255,255,0.05);
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .card h2 {
+            margin: 0 0 12px 0;
+            color: #00bcd4;
+            font-size: 18px;
+        }
+        .card p {
+            margin: 0;
+            color: #b0bec5;
+            font-size: 15px;
+            line-height: 1.6;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .stat-item {
+            background: rgba(0,188,212,0.1);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00bcd4;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #b0bec5;
+        }
+        .nav-buttons {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(34, 40, 49, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #b0bec5;
+            text-decoration: none;
+            font-size: 12px;
+            padding: 8px;
+            transition: color 0.3s;
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        .nav-button.active {
+            color: #00bcd4;
+        }
+        .nav-button img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+        /* 聊天按鈕特殊樣式 */
+        .nav-button[href*="chat"] {
+            position: relative;
+            margin-top: 0;
+            min-height: 54px;
+        }
+        .nav-button[href*="chat"] img {
+            position: absolute;
+            top: -18px;
+           
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #00bcd4 0%, #2196f3 100%);
+            border-radius: 50%;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0,188,212,0.3),
+                        inset 0 -2px 6px rgba(0,0,0,0.2),
+                        inset 0 2px 6px rgba(255,255,255,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .nav-button[href*="chat"]:hover img {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,188,212,0.4),
+                        inset 0 -2px 6px rgba(0,0,0,0.2),
+                        inset 0 2px 6px rgba(255,255,255,0.2);
+        }
+        .nav-button span {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #fff;
+        }
+        .nav-button:hover span,
+        .nav-button.active span {
+            color: #00bcd4;
+        }
+        .nav-button[href*="chat"] span {
+            font-weight: 600;
+        }
+        @media (max-width: 500px) {
+            .container {
+                max-width: 100vw;
+                height: 100dvh;
+                min-height: 0;
+                border-radius: 0;
+                padding-bottom: 60px;
+            }
+            .nav-buttons {
+                max-width: 100vw;
+                border-radius: 0;
+            }
+        }
+        /* ====== 簡約目標賽事專用 ====== */
+        .goal-card {
+            background: rgba(255,255,255,0.03);
+            border-radius: 20px;
+            padding: 18px 18px 14px 18px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            position: relative;
+            transition: box-shadow 0.2s, background 0.2s;
+        }
+        .goal-card:hover {
+            background: rgba(0,188,212,0.07);
+            box-shadow: 0 4px 16px rgba(0,188,212,0.10);
+        }
+        .goal-title {
+            font-size: 17px;
+            font-weight: 600;
+            color: #00bcd4;
+            margin-bottom: 2px;
+        }
+        .goal-meta {
+            font-size: 13px;
+            color: #b0bec5;
+            margin-bottom: 2px;
+        }
+        .goal-actions {
+            position: absolute;
+            top: 12px;
+            right: 14px;
+            display: flex;
+            gap: 4px;
+        }
+        .goal-action-btn {
+            background: none;
+            border: none;
+            color: #b0bec5;
+            font-size: 17px;
+            border-radius: 50%;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.2s, color 0.2s;
+        }
+        .goal-action-btn:hover {
+            background: #e0f7fa;
+            color: #00bcd4;
+        }
+        #addGoalBtn {
+            background: #00bcd4;
+            color: #fff;
+            border: none;
+            padding: 10px 0;
+            border-radius: 14px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 16px;
+            font-weight: 600;
+            margin-top: 10px;
+            box-shadow: 0 2px 8px rgba(0,188,212,0.08);
+            transition: background 0.2s;
+        }
+        #addGoalBtn:hover {
+            background: #0097a7;
+        }
+        /* 彈窗簡約化 */
+        #goalModal {
+            background: rgba(0,0,0,0.18)!important;
+            z-index: 3000;
+        }
+        #goalForm {
+            background: #23272f!important;
+            border-radius: 20px!important;
+            box-shadow: 0 6px 32px rgba(0,188,212,0.10)!important;
+            padding: 32px 22px 22px 22px!important;
+            min-width: 260px;
+            max-width: 96vw;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        #goalForm input, #goalForm select {
+            padding: 12px 10px;
+            border-radius: 10px;
+            border: none;
+            background: #181c22;
+            color: #fff;
+            font-size: 15px;
+            margin-bottom: 0;
+            outline: none;
+            transition: background 0.2s;
+        }
+        #goalForm input:focus, #goalForm select:focus {
+            background: #23272f;
+        }
+        #goalForm button[type="submit"], #goalForm button[type="button"] {
+            padding: 10px 0;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            box-shadow: 0 2px 8px rgba(0,188,212,0.10);
+            transition: background 0.3s, transform 0.2s;
+            margin: 0 0 0 8px;
+            min-width: 80px;
+        }
+        #goalForm button[type="submit"]:hover, #goalForm button[type="button"]:hover {
+            background: linear-gradient(90deg, #078282 0%, #12214e 100%);
+            transform: scale(1.04);
+        }
+        #goalError {
+            color: #ff5252;
+            font-size: 14px;
+            min-height: 18px;
+            margin-bottom: 2px;
+            text-align: left;
+        }
+        @media (max-width: 500px) {
+            #goalForm {
+                padding: 18px 6vw 18px 6vw!important;
+                border-radius: 0 0 18px 18px!important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">三項都會累</div>
+        <div class="content">
+            <div class="card">
+                <h2>今日課表</h2>
+                <p id="todayTraining">載入中...</p>
+            </div>
+            <div class="card">
+                <h2>選擇課表</h2>
+                <select id="scheduleTypeSelect" style="width:100%;padding:8px;border-radius:6px;border:1px solid #444;background:#333;color:#fff;margin-bottom:10px;">
+                    <option value="">請選擇課表</option>
+                    <option value="Challenge Taiwan">Challenge Taiwan</option>
+                    <option value="Ironman">Ironman</option>
+                    <option value="其他">其他</option>
+                </select>
+                <div id="currentScheduleDiv" style="color:#b0bec5;font-size:15px;line-height:1.6;"></div>
+            </div>
+            <div class="card">
+                <h2>目標賽事</h2>
+                <div id="goalsList">載入中...</div>
+                <button id="addGoalBtn" style="margin-top:12px;background:#00bcd4;color:#fff;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;">新增目標</button>
+            </div>
+            <!-- 目標編輯表單彈窗 -->
+            <div id="goalModal" style="display:none;position:fixed;top:0;left:0;width:100vw;height:100vh;background:rgba(0,0,0,0.4);z-index:3000;justify-content:center;align-items:center;transition:opacity 0.2s;opacity:0;">
+                <form id="goalForm" style="background:#222831;padding:24px 20px;border-radius:14px;min-width:260px;max-width:90vw;box-shadow:0 4px 24px rgba(0,0,0,0.18);display:flex;flex-direction:column;gap:12px;position:relative;">
+                    <h3 style="color:#00bcd4;margin:0 0 8px 0;">目標賽事</h3>
+                    <div id="goalError" style="color:#ff5252;font-size:14px;min-height:18px;margin-bottom:2px;"></div>
+                    <input id="goalName" placeholder="賽事名稱" required style="padding:8px;border-radius:6px;border:1px solid #444;background:#333;color:#fff;" />
+                    <input id="goalDate" type="date" required style="padding:8px;border-radius:6px;border:1px solid #444;background:#333;color:#fff;" />
+                    <select id="goalType" required style="padding:8px;border-radius:6px;border:1px solid #444;background:#333;color:#fff;">
+                        <option value="鐵人三項">鐵人三項</option>
+                        <option value="游泳">游泳</option>
+                        <option value="騎車">騎車</option>
+                        <option value="跑步">跑步</option>
+                        <option value="越野跑">越野跑</option>
+                        <option value="其他">其他</option>
+                    </select>
+                    <input id="goalDistance" type="number" min="0" step="0.1" placeholder="距離 (km)" required style="padding:8px;border-radius:6px;border:1px solid #444;background:#333;color:#fff;" />
+                    <div style="display:flex;gap:10px;justify-content:flex-end;">
+                        <button type="button" id="cancelGoalBtn" style="background:#888;color:#fff;border:none;padding:6px 16px;border-radius:6px;">取消</button>
+                        <button type="submit" style="background:#00bcd4;color:#fff;border:none;padding:6px 16px;border-radius:6px;">儲存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-button">
+                <img src="images/home.svg" alt="首頁">
+                <span>首頁</span>
+            </a>
+            <a href="stats.html" class="nav-button">
+                <img src="images/stats.svg" alt="統計">
+                <span>統計</span>
+            </a>
+            <a href="chat/chat_v5_CT226.html" class="nav-button">
+                <img src="images/chat.svg" alt="聊天">
+                <span>聊天</span>
+            </a>
+            <a href="clendar/clendar.html" class="nav-button">
+                <img src="images/calendar.svg" alt="日曆">
+                <span>日曆</span>
+            </a>
+            <a href="membership/membership.html" class="nav-button">
+                <img src="images/user.svg" alt="會員">
+                <span>會員</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // ====== 本地資料變動時自動同步 ======
+            function autoSyncPatch() {
+                const origSetItem = localStorage.setItem;
+                localStorage.setItem = function(key, value) {
+                    origSetItem.apply(this, arguments);
+                    if (localStorage.getItem('token')) syncToCloud();
+                };
+            }
+            autoSyncPatch();
+
+            // ====== 首次載入時自動同步雲端資料 ======
+            if (localStorage.getItem('token')) {
+                syncFromCloud();
+            }
+
+            // ====== 雲端同步 API ======
+            async function syncFromCloud() {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await fetch('http://localhost:3001/api/data', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const { data } = await res.json();
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        localStorage.setItem(key, JSON.stringify(data[key]));
+                    });
+                }
+            }
+            async function syncToCloud() {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const currentUser = localStorage.getItem('currentUser');
+                const calendarEvents = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                const schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+                await fetch('http://localhost:3001/api/data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ data: {
+                        [`calendarEvents_${currentUser}`]: calendarEvents,
+                        'schedules': schedules
+                    }})
+                });
+            }
+
+            // ====== 原本的今日課表與統計 ======
+            function getTodayTraining() {
+                // 嘗試從 localStorage 取得 chat 頁寫入的今日課表
+                const todayScheduleFromChat = localStorage.getItem('todaySchedule');
+                if (todayScheduleFromChat) {
+                    return todayScheduleFromChat;
+                }
+                // fallback: 本地計算
+                const today = new Date().toLocaleString('en-US', { weekday: 'long' });
+                const currentDate = new Date();
+                const startDate = new Date(currentDate.getFullYear(), 0, 1);
+                const days = Math.floor((currentDate - startDate) / (24 * 60 * 60 * 1000));
+                const weekNumber = Math.ceil((days + startDate.getDay() + 1) / 7);
+                const schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+                const currentWeekIndex = (weekNumber - 1) % schedules.length;
+                return schedules[currentWeekIndex]?.[today] || '今天休息';
+            }
+            function calculateWeeklyStats() {
+                const currentUser = localStorage.getItem('currentUser');
+                let events = {};
+                if (currentUser) {
+                    events = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                } else {
+                    events = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                }
+                const today = new Date();
+                const startOfWeek = new Date(today);
+                startOfWeek.setDate(today.getDate() - today.getDay());
+                let weeklySwim = 0;
+                let weeklyBike = 0;
+                let weeklyRun = 0;
+                for (let i = 0; i < 7; i++) {
+                    const date = new Date(startOfWeek);
+                    date.setDate(startOfWeek.getDate() + i);
+                    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    if (events[dateKey]) {
+                        events[dateKey].forEach(event => {
+                            switch(event.type) {
+                                case '游泳':
+                                    weeklySwim += Number(event.distance) || 0;
+                                    break;
+                                case '騎車':
+                                    weeklyBike += Number(event.distance) || 0;
+                                    break;
+                                case '跑步':
+                                    weeklyRun += Number(event.distance) || 0;
+                                    break;
+                            }
+                        });
+                    }
+                }
+                const weeklySwimElement = document.getElementById('weeklySwim');
+                const weeklyBikeElement = document.getElementById('weeklyBike');
+                const weeklyRunElement = document.getElementById('weeklyRun');
+                const weeklyTotalElement = document.getElementById('weeklyTotal');
+                if (weeklySwimElement) weeklySwimElement.textContent = weeklySwim.toFixed(1);
+                if (weeklyBikeElement) weeklyBikeElement.textContent = weeklyBike.toFixed(1);
+                if (weeklyRunElement) weeklyRunElement.textContent = weeklyRun.toFixed(1);
+                if (weeklyTotalElement) weeklyTotalElement.textContent = (weeklySwim + weeklyBike + weeklyRun).toFixed(1);
+            }
+            document.getElementById('todayTraining').textContent = getTodayTraining();
+            calculateWeeklyStats();
+            // 設置當前頁面的導航按鈕為激活狀態
+            const currentPath = window.location.pathname.replace(/^\/+/, '');
+            document.querySelectorAll('.nav-button').forEach(button => {
+                const href = button.getAttribute('href').replace(/^\/+/, '');
+                if (
+                    (href === 'index.html' && (currentPath === '' || currentPath.endsWith('index.html')))
+                    || (href !== 'index.html' && currentPath.endsWith(href))
+                ) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            // ====== 目標賽事功能（優化） ======
+            function getGoals() {
+                try {
+                    const raw = localStorage.getItem('trainingGoals');
+                    if (!raw) return [];
+                    const parsed = JSON.parse(raw);
+                    if (!Array.isArray(parsed)) return [];
+                    return parsed;
+                } catch (e) {
+                    localStorage.removeItem('trainingGoals');
+                    return [];
+                }
+            }
+            function saveGoals(goals) {
+                localStorage.setItem('trainingGoals', JSON.stringify(goals));
+                if (localStorage.getItem('token')) syncToCloud();
+            }
+            function renderGoals() {
+                let goals = getGoals();
+                // 依日期排序，最近的在上
+                goals = goals.sort((a, b) => new Date(a.date) - new Date(b.date));
+                const list = document.getElementById('goalsList');
+                if (!goals.length) {
+                    list.innerHTML = '<div style="color:#b0bec5;">尚未設定目標賽事</div>';
+                    return;
+                }
+                list.innerHTML = goals.map((g, idx) => `
+                    <div class="goal-card" data-idx="${idx}">
+                        <div class="goal-title">${g.name}</div>
+                        <div class="goal-meta">${g.type} ・ ${g.distance} km</div>
+                        <div class="goal-meta">${g.date}</div>
+                        <div class="goal-actions">
+                            <button class="goal-action-btn edit-btn" title="編輯">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M14.7 2.29a1 1 0 0 1 1.42 0l1.59 1.59a1 1 0 0 1 0 1.42l-9.3 9.3-2.12.71.71-2.12 9.3-9.3zM3 17h14v2H3v-2z" fill="#00bcd4"/></svg>
+                            </button>
+                            <button class="goal-action-btn delete-btn" title="刪除">
+                                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 7v7a1 1 0 0 0 2 0V7a1 1 0 1 0-2 0zm3 0v7a1 1 0 0 0 2 0V7a1 1 0 1 0-2 0zm3 0v7a1 1 0 0 0 2 0V7a1 1 0 1 0-2 0zM4 4V2a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v2h3v2H1V4h3zm2-2v2h8V2H6z" fill="#b71c1c"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            }
+            function openGoalModal(goal, idx) {
+                const modal = document.getElementById('goalModal');
+                modal.style.display = 'flex';
+                setTimeout(()=>{modal.style.opacity = 1;}, 10);
+                document.getElementById('goalName').value = goal ? goal.name : '';
+                document.getElementById('goalDate').value = goal ? goal.date : '';
+                document.getElementById('goalType').value = goal ? goal.type : '鐵人三項';
+                document.getElementById('goalDistance').value = goal ? goal.distance : '';
+                document.getElementById('goalForm').setAttribute('data-edit-idx', idx !== undefined ? idx : '');
+                document.getElementById('goalName').focus();
+                document.getElementById('goalError').textContent = '';
+            }
+            function closeGoalModal() {
+                const modal = document.getElementById('goalModal');
+                modal.style.opacity = 0;
+                setTimeout(()=>{modal.style.display = 'none';}, 200);
+                document.getElementById('goalForm').reset();
+                document.getElementById('goalForm').removeAttribute('data-edit-idx');
+                document.getElementById('goalError').textContent = '';
+            }
+            document.getElementById('goalsList').onclick = function(e) {
+                const card = e.target.closest('.goal-card');
+                if (!card) return;
+                const idx = card.getAttribute('data-idx');
+                if (e.target.closest('.edit-btn')) {
+                    // 編輯目標賽事
+                    const goals = getGoals();
+                    openGoalModal(goals[idx], idx);
+                }
+                if (e.target.closest('.delete-btn')) {
+                    if (!confirm('確定要刪除這個目標嗎？')) return;
+                    let goals = getGoals();
+                    // 取得要刪除的目標
+                    const goal = goals[idx];
+                    // 刪除日曆的Event（確保同名同日的Event都刪除）
+                    const currentUser = localStorage.getItem('currentUser');
+                    const date = goal.date;
+                    const name = goal.name;
+                    if (currentUser) {
+                        let calendarEvents = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                        if (calendarEvents[date]) {
+                            calendarEvents[date] = calendarEvents[date].filter(ev => !(ev.type === 'Event' && ev.name === name));
+                            if (calendarEvents[date].length === 0) delete calendarEvents[date];
+                            localStorage.setItem(`calendarEvents_${currentUser}`, JSON.stringify(calendarEvents));
+                        }
+                    } else {
+                        let calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                        if (calendarEvents[date]) {
+                            calendarEvents[date] = calendarEvents[date].filter(ev => !(ev.type === 'Event' && ev.name === name));
+                            if (calendarEvents[date].length === 0) delete calendarEvents[date];
+                            localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+                        }
+                    }
+                    // 刪除目標
+                    goals.splice(idx, 1);
+                    saveGoals(goals);
+                    renderGoals();
+                }
+            };
+            const addGoalBtn = document.getElementById('addGoalBtn');
+            if (addGoalBtn) {
+                addGoalBtn.onclick = () => openGoalModal();
+            }
+            const cancelGoalBtn = document.getElementById('cancelGoalBtn');
+            if (cancelGoalBtn) {
+                cancelGoalBtn.onclick = closeGoalModal;
+            }
+            // 點擊遮罩關閉
+            document.getElementById('goalModal').addEventListener('click', function(e){
+                if(e.target === this) closeGoalModal();
+            });
+            // ESC 關閉
+            document.addEventListener('keydown', function(e){
+                if(e.key === 'Escape') closeGoalModal();
+            });
+            document.getElementById('goalForm').onsubmit = function(e) {
+                e.preventDefault();
+                const name = document.getElementById('goalName').value.trim();
+                const date = document.getElementById('goalDate').value;
+                const type = document.getElementById('goalType').value;
+                const distance = parseFloat(document.getElementById('goalDistance').value);
+                const errorDiv = document.getElementById('goalError');
+                errorDiv.textContent = '';
+                if (!name) {
+                    errorDiv.textContent = '請輸入賽事名稱';
+                    document.getElementById('goalName').focus();
+                    return;
+                }
+                if (!date) {
+                    errorDiv.textContent = '請選擇日期';
+                    document.getElementById('goalDate').focus();
+                    return;
+                }
+                if (new Date(date) < new Date(new Date().toISOString().slice(0,10))) {
+                    errorDiv.textContent = '日期不能是過去';
+                    document.getElementById('goalDate').focus();
+                    return;
+                }
+                if (!type) {
+                    errorDiv.textContent = '請選擇活動類型';
+                    document.getElementById('goalType').focus();
+                    return;
+                }
+                if (!distance || distance <= 0) {
+                    errorDiv.textContent = '請輸入有效距離';
+                    document.getElementById('goalDistance').focus();
+                    return;
+                }
+                let goals = getGoals();
+                const editIdx = this.getAttribute('data-edit-idx');
+                const goalObj = { name, date, type, distance };
+                let isEdit = (editIdx !== '' && editIdx !== null);
+                let oldGoal = null;
+                if (isEdit) {
+                    oldGoal = goals[Number(editIdx)];
+                    goals[Number(editIdx)] = goalObj;
+                } else {
+                    goals.push(goalObj);
+                }
+                saveGoals(goals);
+                renderGoals();
+                closeGoalModal();
+                // 自動匯入日曆頁面，登入與未登入互不影響，並同步編輯/覆蓋
+                const currentUser = localStorage.getItem('currentUser');
+                if (currentUser) {
+                    let calendarEvents = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                    // 編輯時先移除舊的（日期或名稱有變都要移除）
+                    if (isEdit && oldGoal) {
+                        // 先移除舊日期的 Event（只有當日期有變動時才移除舊日期）
+                        if (oldGoal.date !== date && calendarEvents[oldGoal.date]) {
+                            calendarEvents[oldGoal.date] = calendarEvents[oldGoal.date].filter(ev => !(ev.type === 'Event' && ev.name === oldGoal.name));
+                            if (calendarEvents[oldGoal.date].length === 0) delete calendarEvents[oldGoal.date];
+                        }
+                        // 新日期先移除同名 Event，避免重複
+                        calendarEvents[date] = (calendarEvents[date] || []).filter(ev => !(ev.type === 'Event' && ev.name === name));
+                    } else {
+                        calendarEvents[date] = (calendarEvents[date] || []).filter(ev => !(ev.type === 'Event' && ev.name === name));
+                    }
+                    calendarEvents[date].push({ type: 'Event', name: name, distance: distance, eventType: type });
+                    localStorage.setItem(`calendarEvents_${currentUser}`, JSON.stringify(calendarEvents));
+                } else {
+                    let globalEvents = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                    if (isEdit && oldGoal) {
+                        if (oldGoal.date !== date && globalEvents[oldGoal.date]) {
+                            globalEvents[oldGoal.date] = globalEvents[oldGoal.date].filter(ev => !(ev.type === 'Event' && ev.name === oldGoal.name));
+                            if (globalEvents[oldGoal.date].length === 0) delete globalEvents[oldGoal.date];
+                        }
+                        globalEvents[date] = (globalEvents[date] || []).filter(ev => !(ev.type === 'Event' && ev.name === name));
+                    } else {
+                        globalEvents[date] = (globalEvents[date] || []).filter(ev => !(ev.type === 'Event' && ev.name === name));
+                    }
+                    globalEvents[date].push({ type: 'Event', name: name, distance: distance, eventType: type });
+                    localStorage.setItem('calendarEvents', JSON.stringify(globalEvents));
+                }
+            };
+            // 雲端同步時也同步目標
+            const origSyncFromCloud = syncFromCloud;
+            syncFromCloud = async function() {
+                await origSyncFromCloud();
+                renderGoals();
+            }
+            // 頁面載入時載入目標
+            renderGoals();
+
+            // ----------- 補齊舊有日曆 Event 的 eventType 欄位 -----------
+            function patchOldCalendarEvents() {
+                const currentUser = localStorage.getItem('currentUser');
+                let calendarEvents = {};
+                if (currentUser) {
+                    calendarEvents = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                } else {
+                    calendarEvents = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                }
+                const goals = getGoals();
+                // 建立目標賽事查詢表（依日期+名稱）
+                const goalMap = {};
+                goals.forEach(g => {
+                    goalMap[`${g.date}__${g.name}`] = g.type;
+                });
+                let patched = false;
+                Object.keys(calendarEvents).forEach(date => {
+                    calendarEvents[date].forEach(ev => {
+                        if (ev.type === 'Event' && !ev.eventType) {
+                            // 依照日期+名稱找 type
+                            ev.eventType = goalMap[`${date}__${ev.name}`] || '';
+                            patched = true;
+                        }
+                    });
+                });
+                if (patched) {
+                    if (currentUser) {
+                        localStorage.setItem(`calendarEvents_${currentUser}`, JSON.stringify(calendarEvents));
+                    } else {
+                        localStorage.setItem('calendarEvents', JSON.stringify(calendarEvents));
+                    }
+                }
+            }
+            patchOldCalendarEvents();
+
+            // 彈窗動畫與錯誤提示樣式
+            const modal = document.getElementById('goalModal');
+            modal.style.transition = 'opacity 0.2s';
+            modal.style.opacity = 0;
+
+            // ====== 選擇課表功能 ======
+            const scheduleTypeSelect = document.getElementById('scheduleTypeSelect');
+            const currentScheduleDiv = document.getElementById('currentScheduleDiv');
+            function renderCurrentSchedule() {
+                const selectedSchedule = scheduleTypeSelect.value;
+                if (selectedSchedule) {
+                    currentScheduleDiv.textContent = `已選擇: ${selectedSchedule}`;
+                } else {
+                    currentScheduleDiv.textContent = '尚未選擇課表';
+                }
+            }
+            scheduleTypeSelect.addEventListener('change', renderCurrentSchedule);
+            renderCurrentSchedule();
+        });
+    </script>
+</body>
+</html> 

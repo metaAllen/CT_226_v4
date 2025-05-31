@@ -1,0 +1,76 @@
+<head>
+    <style>
+        /* Add your styles here */
+    </style>
+</head>
+<body>
+    <div class="statistics-container">
+        <!-- 添加 Firebase SDK -->
+        <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-app-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-auth-compat.js"></script>
+        <script src="https://www.gstatic.com/firebasejs/9.x.x/firebase-database-compat.js"></script>
+
+        <script>
+            // Firebase 配置
+            const firebaseConfig = {
+                // 這裡需要填入您的 Firebase 配置信息
+                apiKey: "YOUR_API_KEY",
+                authDomain: "YOUR_AUTH_DOMAIN",
+                databaseURL: "YOUR_DATABASE_URL",
+                projectId: "YOUR_PROJECT_ID",
+                storageBucket: "YOUR_STORAGE_BUCKET",
+                messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+                appId: "YOUR_APP_ID"
+            };
+
+            // 初始化 Firebase
+            firebase.initializeApp(firebaseConfig);
+            const database = firebase.database();
+
+            // 加載統計數據
+            function loadStatistics() {
+                const userId = firebase.auth().currentUser?.uid || 'anonymous';
+                const eventsRef = database.ref(`users/${userId}/calendarEvents`);
+                
+                eventsRef.once('value', (snapshot) => {
+                    const events = snapshot.val() || {};
+                    updateStatisticsDisplay(events);
+                });
+            }
+
+            // 更新統計顯示
+            function updateStatisticsDisplay(events) {
+                const stats = {
+                    run: { total: 0, count: 0 },
+                    bike: { total: 0, count: 0 },
+                    swim: { total: 0, count: 0 }
+                };
+
+                // 計算總距離和次數
+                Object.values(events).forEach(dayEvents => {
+                    dayEvents.forEach(event => {
+                        const type = event.type.toLowerCase();
+                        if (stats[type]) {
+                            stats[type].total += event.distance;
+                            stats[type].count++;
+                        }
+                    });
+                });
+
+                // 更新顯示
+                document.getElementById('run-total').textContent = `${stats.run.total}km`;
+                document.getElementById('run-count').textContent = `${stats.run.count}次`;
+                document.getElementById('bike-total').textContent = `${stats.bike.total}km`;
+                document.getElementById('bike-count').textContent = `${stats.bike.count}次`;
+                document.getElementById('swim-total').textContent = `${stats.swim.total}km`;
+                document.getElementById('swim-count').textContent = `${stats.swim.count}次`;
+            }
+
+            // 頁面加載時初始化統計
+            document.addEventListener('DOMContentLoaded', () => {
+                loadStatistics();
+            });
+        </script>
+    </div>
+</body>
+</html> 

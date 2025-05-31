@@ -1,0 +1,1249 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>聊天 - 智能助手</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        }
+        body {
+            width: 100vw;
+            min-height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 420px;
+            height: 100dvh;
+            min-height: 0;
+            background: rgba(34, 40, 49, 0.98);
+            border-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            overflow: hidden;
+            border: 1.5px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top);
+            position: relative;
+        }
+        .header {
+            width: 100%;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            color: white;
+            text-align: center;
+            padding: 20px 0 16px 0;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .chat-box {
+            flex: 1 1 0;
+            min-height: 0;
+            width: 100%;
+            background: transparent;
+            padding: 18px 16px 8px 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            border-bottom: 1px solid #2d3748;
+            transition: background 0.3s;
+            padding-bottom: 20px;
+        }
+        .message {
+            padding: 14px 18px;
+            border-radius: 18px 18px 18px 6px;
+            max-width: 80%;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-line;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s forwards;
+            margin: 0 12px;
+        }
+        .message.bot {
+            background: linear-gradient(90deg, #555 0%, #607d8b 100%);
+            color: #fff;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .message.user {
+            background: linear-gradient(90deg, #00bcd4 0%, #2196f3 100%);
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .button-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px 16px 10px 16px;
+            width: 100%;
+            background: transparent;
+            border-bottom: none;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        .button-container button {
+            width: 100%;
+            height: 112px;
+            padding: 0;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,188,212,0.10);
+            transition: background 0.3s, transform 0.2s;
+        }
+        .button-container button:hover {
+            background: linear-gradient(90deg, #078282 0%, #12214e 100%);
+            transform: translateY(-2px) scale(1.04);
+        }
+        .input-area {
+            width: 100%;
+            background: #23272f;
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            gap: 10px;
+            border-top: 1px solid #2d3748;
+            /* position: fixed; */
+            /* bottom: 95px; */
+            /* left: 0; */
+            /* right: 0; */
+            max-width: 420px;
+            margin: 0 auto;
+            box-sizing: border-box;
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        .input-area input {
+            flex: 1;
+            background: #181c22;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: background 0.2s;
+        }
+        .input-area input:focus {
+            background: #23272f;
+        }
+        .input-area button {
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .input-area button:hover {
+            background: linear-gradient(90deg, #078282 0%, #12214e 100%);
+            transform: scale(1.05);
+        }
+        .button-row {
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            gap: 12px;
+            padding: 0 16px 10px 16px;
+            width: 100%;
+            background: transparent;
+            border-bottom: none;
+            margin: 0;
+            box-sizing: border-box;
+            /* margin-bottom: 150px; */
+        }
+        .button-row button {
+            flex: 1 1 0;
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            height: auto;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            border: none;
+            font-size: 18px;
+            cursor: pointer;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,188,212,0.10);
+            transition: background 0.3s, transform 0.2s;
+            margin: 0;
+        }
+        .button-row button:hover {
+            background: linear-gradient(90deg, #078282 0%, #12214e 100%);
+            transform: translateY(-2px) scale(1.04);
+        }
+        .nav-buttons {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(34, 40, 49, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #b0bec5;
+            text-decoration: none;
+            font-size: 12px;
+            padding: 8px;
+            transition: color 0.3s;
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        .nav-button.active {
+            color: #00bcd4;
+        }
+        .nav-button img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+        /* 聊天按鈕特殊樣式 */
+        .nav-button[href*="chat"] {
+            position: relative;
+            margin-top: 0;
+            min-height: 54px;
+        }
+        .nav-button[href*="chat"] img {
+            position: absolute;
+            top: -18px;
+     
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #00bcd4 0%, #2196f3 100%);
+            border-radius: 50%;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0,188,212,0.3),
+                        inset 0 -2px 6px rgba(0,0,0,0.2),
+                        inset 0 2px 6px rgba(255,255,255,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .nav-button[href*="chat"]:hover img {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,188,212,0.4),
+                        inset 0 -2px 6px rgba(0,0,0,0.2),
+                        inset 0 2px 6px rgba(255,255,255,0.2);
+        }
+        .nav-button span {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #fff;
+        }
+        .nav-button:hover span,
+        .nav-button.active span {
+            color: #00bcd4;
+        }
+        .nav-button[href*="chat"] span {
+            font-weight: 600;
+        }
+        @media (max-width: 500px) {
+            .chat-container {
+                max-width: 100vw;
+                height: 100dvh;
+                min-height: 0;
+                border-radius: 0;
+                padding-bottom: 95px;
+            }
+            .chat-box {
+                padding: 10px 4vw 8px 4vw;
+            }
+            .button-container, .input-area {
+                padding-left: 16px;
+                padding-right: 16px;
+            }
+            .nav-buttons {
+                max-width: 100vw;
+                border-radius: 0;
+            }
+        }
+        /* 自定義滾動條樣式 */
+        .chat-box::-webkit-scrollbar {
+            width: 8px;
+        }
+        .chat-box::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+        .chat-box::-webkit-scrollbar-thumb {
+            background: rgba(0,188,212,0.3);
+            border-radius: 4px;
+        }
+        .chat-box::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,188,212,0.5);
+        }
+        /* Firefox 滾動條樣式 */
+        .chat-box {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,188,212,0.3) rgba(255,255,255,0.05);
+        }
+        /* 課表按鈕（主色） */
+        .button-container button {
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            color: #fff;
+        }
+        /* 游泳 */
+        #swimming-button {
+            background: linear-gradient(90deg, #003d4d 0%, #0b5a6f 100%);
+            color: #fff;
+        }
+        /* 騎車 */
+        #cycling-button {
+            background: linear-gradient(90deg, #0b5a6f 0%, #1c8b93 100%);
+            color: #fff;
+        }
+        /* 跑步 */
+        #running-button {
+            background: linear-gradient(90deg, #1c8b93 0%, #3ab1b6 100%);
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">
+            <span>我的課表</span>
+        </div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="button-container">
+            <button id="daily-schedule-button">
+                <img src="../images/schedule_today.png" alt="今日課表" style="width:60px;height:60px;display:block;margin:0 auto 2px auto;" />
+                <span style="font-size:14px;">今日課表</span>
+            </button>
+            <button id="weekly-schedule-button">
+                <img src="../images/schedule_week.png" alt="本週課表" style="width:60px;height:60px;display:block;margin:0 auto 2px auto;" />
+                <span style="font-size:14px;">本週課表</span>
+            </button>
+        </div>
+        <div class="button-row">
+            <button id="swimming-button">
+                <img src="../images/swim.png" alt="游泳" style="width:60px;height:60px;display:block;margin:0 auto 2px auto;" />
+                <span style="font-size:14px;">今天游了</span>
+            </button>
+            <button id="cycling-button">
+                <img src="../images/bike.png" alt="騎車" style="width:67px;height:67px;display:block;margin:0 auto -7px auto;" />
+                <span style="font-size:14px;">今天騎了</span>
+            </button>
+            <button id="running-button">
+                <img src="../images/run.png" alt="跑步" style="width:45px;height:45px;display:block;margin:0 auto 16px auto;" />
+                <span style="font-size:14px;">今天跑了</span>
+            </button>
+        </div>
+        <div class="input-area">
+            <input type="text" id="message-input" placeholder="你今天運動了嗎?">
+            <button id="send-button">➤</button>
+        </div>
+        <div class="nav-buttons">
+            <a href="../index.html" class="nav-button">
+                <img src="../images/home.svg" alt="首頁">
+                <span>首頁</span>
+            </a>
+            <a href="../stats.html" class="nav-button">
+                <img src="../images/stats.svg" alt="統計">
+                <span>統計</span>
+            </a>
+            <a href="../chat/chat_v5_CT226.html" class="nav-button active">
+                <img src="../images/chat.svg" alt="聊天">
+                <span>聊天</span>
+            </a>
+            <a href="../clendar/clendar.html" class="nav-button">
+                <img src="../images/calendar.svg" alt="日曆">
+                <span>日曆</span>
+            </a>
+            <a href="../membership/membership.html" class="nav-button">
+                <img src="../images/user.svg" alt="會員">
+                <span>會員</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- 登入/註冊 Modal -->
+    <div id="auth-modal" style="display:none; position:fixed; z-index:9999; left:0; top:0; width:100vw; height:100vh; background:rgba(0,0,0,0.4); align-items:center; justify-content:center;">
+        <div style="background:#fff; border-radius:12px; padding:32px 24px; max-width:320px; margin:auto; box-shadow:0 4px 24px rgba(0,0,0,0.18);">
+            <h2 style="margin-top:0;">登入 / 註冊</h2>
+            <input id="auth-username" type="text" placeholder="帳號" style="width:100%;margin-bottom:12px;padding:8px;">
+            <input id="auth-password" type="password" placeholder="密碼" style="width:100%;margin-bottom:12px;padding:8px;">
+            <div style="display:flex;gap:8px;">
+                <button id="login-btn" style="flex:1;">登入</button>
+                <button id="register-btn" style="flex:1;">註冊</button>
+            </div>
+            <div id="auth-error" style="color:red;margin-top:10px;min-height:20px;"></div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chatBox = document.getElementById('chat-box');
+            const schedules = [
+                // 第1週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2.5K',
+                    'Saturday': '水月公園團騎90 K',
+                    'Sunday': '水月公園團騎90 K'
+                },
+                // 第2週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2.5K',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2.5K',
+                    'Saturday': '水月公園團騎85K，再跑3 K。',
+                    'Sunday': '水月公園團騎85K，再跑3 K。'
+                },
+                // 第3週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2.5K',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '跑6 k',
+                    'Friday': '游2.5K',
+                    'Saturday': '水月公園團騎85K，再跑3 K。',
+                    'Sunday': '跑12 K'
+                },
+                // 第4週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2.5K',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2.5K',
+                    'Saturday': '水月公園團騎75K，再跑5K。',
+                    'Sunday': '水月公園團騎75K，再跑5K。'
+                },
+                // 第5週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '訓練台60分，再跑3 K。',
+                    'Wednesday': '訓練台60分，再跑3 K。',
+                    'Thursday': '跑7 K',
+                    'Friday': '游2.5K',
+                    'Saturday': '水月公園團騎75K，再跑3K。',
+                    'Sunday': '跑15 K'
+                },
+                // 第6週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '放假',
+                    'Wednesday': '游2K',
+                    'Thursday': '訓練台60分',
+                    'Friday': '放假',
+                    'Saturday': '水月公園團騎75K，再跑3K。',
+                    'Sunday': '水月公園團騎75K，再跑3K。'
+                },
+                // 第7週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '放假',
+                    'Wednesday': '游2K',
+                    'Thursday': '訓練台60分',
+                    'Friday': '跑10 K',
+                    'Saturday': '放假',
+                    'Sunday': '水月公園團騎75K，再跑3K。'
+                },
+                // 第8週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2.5K',
+                    'Wednesday': '訓練台70分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2.5K',
+                    'Saturday': '水月公園團騎75K，再跑3K。',
+                    'Sunday': '水月公園團騎75K，再跑3K。'
+                },
+                // 第9週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2.5K',
+                    'Wednesday': '訓練台70分',
+                    'Thursday': '訓練台70分',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎75K，再跑3K。',
+                    'Sunday': '跑12 K'
+                },
+                // 第10週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2.5K',
+                    'Wednesday': '跑10 K',
+                    'Thursday': '訓練台70分',
+                    'Friday': '游2.5K',
+                    'Saturday': '水月公園團騎75K，再跑3K。',
+                    'Sunday': '訓練台30分，再跑10K。'
+                },
+                // 第11週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2K',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '訓練台60分',
+                    'Friday': '放假',
+                    'Saturday': '訓練台30分，再跑10K。',
+                    'Sunday': '訓練台30分，再跑10K。'
+                },
+                // 第12週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2K',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '跑10 K',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎40K，再跑10K。',
+                    'Sunday': '跑12 K'
+                },
+                // 第13週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2.5K',
+                    'Wednesday': '訓練台70分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎40K，再跑10K。',
+                    'Sunday': '跑12 K'
+                },
+                // 第14週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游2.5K',
+                    'Wednesday': '訓練台70分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎70K，再跑5 K。',
+                    'Sunday': '跑12 K'
+                },
+                // 第15週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游1.5K',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '跑8 K',
+                    'Friday': '游2 K',
+                    'Saturday': '水月公園團騎85K',
+                    'Sunday': '跑12 K'
+                },
+                // 第16週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3K',
+                    'Wednesday': '訓練台70分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎85K',
+                    'Sunday': '水月公園團騎85K'
+                },
+                // 第17週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3K',
+                    'Wednesday': '訓練台70分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎85K',
+                    'Sunday': '跑12 K'
+                },
+                // 第18週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎85K。',
+                    'Sunday': '跑15 k'
+                },
+                // 第19週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '跑12 K',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎85K。',
+                    'Sunday': '跑15 k'
+                },
+                // 第20週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '放假',
+                    'Thursday': '訓練台90分',
+                    'Friday': '跑12 K',
+                    'Saturday': '訓練台60分，再跑10 K。',
+                    'Sunday': '訓練台60分，再跑10 K。'
+                },
+                // 第21週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑10 K',
+                    'Friday': '放假',
+                    'Saturday': '訓練台60分，再跑10 K。',
+                    'Sunday': '訓練台60分，再跑10 K。'
+                },
+                // 第22週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑12 K',
+                    'Friday': '跑12 K',
+                    'Saturday': '訓練台70分，再跑10 K。',
+                    'Sunday': '訓練台70分，再跑10 K。'
+                },
+                // 第23週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '訓練台90分',
+                    'Friday': '跑12 K',
+                    'Saturday': '跑12 K',
+                    'Sunday': '訓練台60分，再跑10 K。'
+                },
+                // 第24週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑12 K',
+                    'Friday': '訓練台90分',
+                    'Saturday': '訓練台60分，再跑10 K。',
+                    'Sunday': '訓練台60分，再跑10 K。'
+                },
+                // 第25週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '訓練台60分，再跑10 K。',
+                    'Friday': '游3K',
+                    'Saturday': '水月公園團騎86 k，再跑5 K。',
+                    'Sunday': '水月公園團騎86 k，再跑5 K。'
+                },
+                // 第26週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '訓練台90分',
+                    'Friday': '訓練台90分',
+                    'Saturday': '水月公園團騎86 k，再跑5 K。',
+                    'Sunday': '水月公園團騎86 k，再跑5 K。'
+                },
+                // 第27週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑12K',
+                    'Friday': '跑12K',
+                    'Saturday': '訓練台90分，再跑6K。',
+                    'Sunday': '訓練台90分，再跑6K。'
+                },
+                // 第28週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3.8K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑10 K',
+                    'Friday': '游3.8K',
+                    'Saturday': '水月公園團騎86 k，再跑5 K。',
+                    'Sunday': '訓練台90分，再跑10 k'
+                },
+                // 第29週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3K',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '跑10 K',
+                    'Friday': '游2.5K',
+                    'Saturday': '訓練台90分，再跑6K。',
+                    'Sunday': '訓練台90分，再跑6K。'
+                },
+                // 第30週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '訓練台60分',
+                    'Wednesday': '訓練台60分',
+                    'Thursday': '跑10 K',
+                    'Friday': '游3K',
+                    'Saturday': '水月公園團騎86 k，再跑5 K。',
+                    'Sunday': '水月公園團騎86 k，再跑5 K。'
+                },
+                // 第31週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '訓練台60分',
+                    'Wednesday': '跑10 K',
+                    'Thursday': '訓練台90分',
+                    'Friday': '游2K',
+                    'Saturday': '水月公園團騎86 k，再跑5 K。',
+                    'Sunday': '跑15K'
+                },
+                // 第32週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '訓練台60分',
+                    'Wednesday': '跑10 K',
+                    'Thursday': '訓練台90分',
+                    'Friday': '游3K',
+                    'Saturday': '水月公園團騎86 k，再跑5 K。',
+                    'Sunday': '跑18K'
+                },
+                // 第33週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '訓練台90分',
+                    'Wednesday': '跑13K',
+                    'Thursday': '訓練台90分',
+                    'Friday': '游3K',
+                    'Saturday': '水月公園團騎86 k，再跑5 K。',
+                    'Sunday': '跑18K'
+                },
+                // 第34週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑15K',
+                    'Friday': '訓練台90分',
+                    'Saturday': '游3.8K',
+                    'Sunday': '水月公園團騎86 k，再跑5 K。'
+                },
+                // 第35週
+                {
+                    'Monday': '放假',
+                    'Tuesday': '游3K',
+                    'Wednesday': '訓練台90分',
+                    'Thursday': '跑15K',
+                    'Friday': '游3.8K',
+                    'Saturday': '水月公園團騎86 k，再跑5 K。',
+                    'Sunday': '水月公園團騎86 k，再跑5 K。'
+                },
+                // 第36週
+                {
+                    'Monday': '游3.8K',
+                    'Tuesday': '訓練台60分',
+                    'Wednesday': '跑10K（早上七點前要完成。）',
+                    'Thursday': '放假',
+                    'Friday': '放假',
+                    'Saturday': 'CT226',
+                    'Sunday': '放假'
+                }
+            ];
+
+            const dailyScheduleButton = document.getElementById('daily-schedule-button');
+            const weeklyScheduleButton = document.getElementById('weekly-schedule-button');
+            const swimmingButton = document.getElementById('swimming-button');
+            const cyclingButton = document.getElementById('cycling-button');
+            const runningButton = document.getElementById('running-button');
+            const messageInput = document.getElementById('message-input');
+            const sendButton = document.getElementById('send-button');
+
+            // 取得目前登入用戶
+            function getCurrentUser() {
+                return localStorage.getItem('currentUser');
+            }
+
+            // 獲取用戶數據
+            function getUserData() {
+                const currentUser = getCurrentUser();
+                const userData = JSON.parse(localStorage.getItem(`user_${currentUser}`)) || {
+                    chatHistory: [],
+                    calendarEvents: {}
+                };
+                return userData;
+            }
+
+            function getCurrentWeekIndex() {
+                const currentDate = new Date();
+                const startDate = new Date(currentDate.getFullYear(), 0, 1);
+                const days = Math.floor((currentDate - startDate) / (24 * 60 * 60 * 1000));
+                const weekNumber = Math.ceil((days + startDate.getDay() + 1) / 7);
+                return (weekNumber - 1) % schedules.length;
+            }
+
+            function getTodaySchedule() {
+                // 取得本週課表
+                const currentWeekIndex = getCurrentWeekIndex();
+                const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                const todayDate = new Date();
+                const todayIdx = todayDate.getDay() === 0 ? 6 : todayDate.getDay() - 1; // 0=Sunday
+                // 取得本週的日期字串
+                const weekStart = new Date(todayDate);
+                weekStart.setDate(todayDate.getDate() - todayDate.getDay() + 1); // 週一
+                let weekDates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(weekStart);
+                    d.setDate(weekStart.getDate() + i);
+                    weekDates.push(d);
+                }
+                // 取得calendarEvents
+                const currentUser = getCurrentUser();
+                let events;
+                if (currentUser) {
+                    events = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                } else {
+                    events = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                }
+                // 先複製原始課表
+                let schedule = {...schedules[currentWeekIndex]};
+                // 先標記所有Event當天及前2天
+                let eventDays = [];
+                weekDates.forEach((date, idx) => {
+                    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    if (events[dateKey] && events[dateKey].some(ev => ev.type === 'Event')) {
+                        eventDays.push(idx);
+                    }
+                });
+                if (eventDays.length > 0) {
+                    // 設定放假與Event顯示（連續Event不覆蓋Event當天）
+                    eventDays.forEach(idx => {
+                        for (let i = 1; i <= 2; i++) {
+                            const restIdx = idx - i;
+                            if (restIdx >= 0 && !eventDays.includes(restIdx)) {
+                                schedule[daysOfWeek[restIdx]] = '放假';
+                            }
+                        }
+                        const date = weekDates[idx];
+                        const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                        const eventList = (events[dateKey] || []).filter(ev => ev.type === 'Event');
+                        if (eventList.length > 0) {
+                            schedule[daysOfWeek[idx]] = eventList.map(ev => {
+                                let str = ev.name || '賽事';
+                                if (ev.distance) str += ` ${ev.distance}K`;
+                                return str;
+                            }).join(' / ');
+                        }
+                    });
+                }
+                // 寫入 localStorage 供首頁同步
+                try { localStorage.setItem('todaySchedule', schedule[daysOfWeek[todayIdx]]); } catch(e){}
+                return schedule[daysOfWeek[todayIdx]] || 'No training today.';
+            }
+
+            function getWeeklySchedule() {
+                const currentWeekIndex = getCurrentWeekIndex();
+                const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+                // 取得本週的日期字串
+                const today = new Date();
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay() + 1); // 週一
+                let weekDates = [];
+                for (let i = 0; i < 7; i++) {
+                    const d = new Date(weekStart);
+                    d.setDate(weekStart.getDate() + i);
+                    weekDates.push(d);
+                }
+                // 取得calendarEvents
+                const currentUser = getCurrentUser();
+                let events;
+                if (currentUser) {
+                    events = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                } else {
+                    events = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                }
+                // 先複製原始課表
+                let schedule = {...schedules[currentWeekIndex]};
+                // 先標記所有Event當天及前2天
+                let eventDays = [];
+                weekDates.forEach((date, idx) => {
+                    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    if (events[dateKey] && events[dateKey].some(ev => ev.type === 'Event')) {
+                        eventDays.push(idx);
+                    }
+                });
+                if (eventDays.length === 0) {
+                    // 沒有任何Event，直接回傳原始課表
+                    return daysOfWeek.map(day => `${day}: ${schedule[day] || 'No training'}`).join('\n');
+                }
+                // 設定放假與Event顯示（連續Event不覆蓋Event當天）
+                eventDays.forEach(idx => {
+                    // 前2天設為放假，但不覆蓋Event當天
+                    for (let i = 1; i <= 2; i++) {
+                        const restIdx = idx - i;
+                        // 若該天本來就是Event，不覆蓋
+                        if (restIdx >= 0 && !eventDays.includes(restIdx)) {
+                            schedule[daysOfWeek[restIdx]] = '放假';
+                        }
+                    }
+                    // 當天顯示賽事名稱 距離K（若有多個Event，顯示所有名稱與距離）
+                    const date = weekDates[idx];
+                    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    const eventList = (events[dateKey] || []).filter(ev => ev.type === 'Event');
+                    if (eventList.length > 0) {
+                        // 顯示所有Event名稱與距離
+                        schedule[daysOfWeek[idx]] = eventList.map(ev => {
+                            let str = ev.name || '賽事';
+                            if (ev.distance) str += ` ${ev.distance}K`;
+                            return str;
+                        }).join(' / ');
+                    }
+                });
+                return daysOfWeek.map(day => `${day}: ${schedule[day] || 'No training'}`).join('\n');
+            }
+
+            // 保存消息到歷史記錄
+            function saveMessageToHistory(messageText, isUser) {
+                const currentUser = getCurrentUser();
+                let key = currentUser ? `chatHistory_${currentUser}` : 'chatHistory_guest';
+                let chatHistory = JSON.parse(localStorage.getItem(key) || '[]');
+                chatHistory.push({
+                    text: messageText,
+                    isUser: isUser,
+                    timestamp: new Date().toISOString()
+                });
+                localStorage.setItem(key, JSON.stringify(chatHistory));
+                if (localStorage.getItem('token')) syncToCloud();
+            }
+
+            // 加載歷史消息
+            function loadChatHistory() {
+                const currentUser = getCurrentUser();
+                let key = currentUser ? `chatHistory_${currentUser}` : 'chatHistory_guest';
+                let chatHistory = [];
+                const raw = localStorage.getItem(key);
+                if (raw) {
+                    chatHistory = JSON.parse(raw);
+                }
+                if (!raw || chatHistory.length === 0) {
+                    // 僅在 localStorage 沒有任何紀錄時才顯示歡迎詞
+                    if (!raw) {
+                        const welcomeMessage = `歡迎使用《三項都會累》的課表！\n這份訓練課表會在你懷疑人生之前，\n先貼心幫你安排好每週該怎麼累得有意義。\n請勇敢按下「今日課表」或「本週課表」\n享受這段鐵人旅程吧！! !`;
+                        addMessageToChat(welcomeMessage, false);
+                    }
+                } else {
+                    chatHistory.forEach(msg => {
+                        addMessageToChat(msg.text, msg.isUser);
+                    });
+                }
+            }
+
+            // 添加消息到聊天框
+            function addMessageToChat(messageText, isUser) {
+                const messageDiv = document.createElement('div');
+                messageDiv.classList.add('message', isUser ? 'user' : 'bot');
+                messageDiv.textContent = messageText;
+                chatBox.appendChild(messageDiv);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+
+            function saveRunToCalendar(km) {
+                const currentUser = getCurrentUser();
+                const today = new Date();
+                const y = today.getFullYear();
+                const m = String(today.getMonth() + 1).padStart(2, '0');
+                const d = String(today.getDate()).padStart(2, '0');
+                const dateKey = `${y}-${m}-${d}`;
+                let events;
+                if (currentUser) {
+                    events = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                } else {
+                    events = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                }
+                if (!events[dateKey]) events[dateKey] = [];
+                events[dateKey].push({ type: '跑步', distance: km, duration: 0 });
+                if (currentUser) {
+                    localStorage.setItem(`calendarEvents_${currentUser}`, JSON.stringify(events));
+                } else {
+                    localStorage.setItem('calendarEvents', JSON.stringify(events));
+                }
+                if (localStorage.getItem('token')) syncToCloud();
+            }
+
+            function saveBikeToCalendar(km) {
+                const currentUser = getCurrentUser();
+                const today = new Date();
+                const y = today.getFullYear();
+                const m = String(today.getMonth() + 1).padStart(2, '0');
+                const d = String(today.getDate()).padStart(2, '0');
+                const dateKey = `${y}-${m}-${d}`;
+                let events;
+                if (currentUser) {
+                    events = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                } else {
+                    events = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                }
+                if (!events[dateKey]) events[dateKey] = [];
+                events[dateKey].push({ type: '騎車', distance: km, duration: 0 });
+                if (currentUser) {
+                    localStorage.setItem(`calendarEvents_${currentUser}`, JSON.stringify(events));
+                } else {
+                    localStorage.setItem('calendarEvents', JSON.stringify(events));
+                }
+                if (localStorage.getItem('token')) syncToCloud();
+            }
+
+            function saveSwimToCalendar(km) {
+                const currentUser = getCurrentUser();
+                const today = new Date();
+                const y = today.getFullYear();
+                const m = String(today.getMonth() + 1).padStart(2, '0');
+                const d = String(today.getDate()).padStart(2, '0');
+                const dateKey = `${y}-${m}-${d}`;
+                let events;
+                if (currentUser) {
+                    events = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                } else {
+                    events = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                }
+                if (!events[dateKey]) events[dateKey] = [];
+                events[dateKey].push({ type: '游泳', distance: km, duration: 0 });
+                if (currentUser) {
+                    localStorage.setItem(`calendarEvents_${currentUser}`, JSON.stringify(events));
+                } else {
+                    localStorage.setItem('calendarEvents', JSON.stringify(events));
+                }
+                if (localStorage.getItem('token')) syncToCloud();
+            }
+
+            let expectingSwimResponse = false;
+            let expectingCyclingResponse = false;
+            let expectingRunningResponse = false;
+
+            dailyScheduleButton.addEventListener('click', () => {
+                addMessageToChat(`今日課表:\n${getTodaySchedule()}`, false);
+            });
+
+            weeklyScheduleButton.addEventListener('click', () => {
+                addMessageToChat(`本週課表:\n${getWeeklySchedule()}`, false);
+            });
+
+            swimmingButton.addEventListener('click', () => {
+                expectingSwimResponse = true;
+                expectingCyclingResponse = false;
+                expectingRunningResponse = false;
+                addMessageToChat('您今天游了幾 K呢?', false);
+            });
+
+            cyclingButton.addEventListener('click', () => {
+                expectingSwimResponse = false;
+                expectingCyclingResponse = true;
+                expectingRunningResponse = false;
+                addMessageToChat('您今天騎了幾 K呢?', false);
+            });
+
+            runningButton.addEventListener('click', () => {
+                expectingSwimResponse = false;
+                expectingCyclingResponse = false;
+                expectingRunningResponse = true;
+                addMessageToChat('您今天跑了幾 K呢?', false);
+            });
+
+            function handleMessageInput(messageText) {
+                if (messageText) {
+                    addMessageToChat(messageText, true);
+                    messageInput.value = '';
+                    
+                    if (expectingSwimResponse && /\d|K/i.test(messageText)) {
+                        const km = parseFloat(messageText.match(/\d+/)?.[0] || 0);
+                        if (km > 0) {
+                            saveSwimToCalendar(km);
+                            addMessageToChat(`您今天游了 ${km} 公里，真棒！`, false);
+                        } else {
+                            addMessageToChat('請輸入有效的距離', false);
+                        }
+                        expectingSwimResponse = false;
+                    }
+                    else if (expectingCyclingResponse && /\d|K/i.test(messageText)) {
+                        const km = parseFloat(messageText.match(/\d+/)?.[0] || 0);
+                        if (km > 0) {
+                            saveBikeToCalendar(km);
+                            addMessageToChat(`您今天騎了 ${km} 公里，真棒！`, false);
+                        } else {
+                            addMessageToChat('請輸入有效的距離', false);
+                        }
+                        expectingCyclingResponse = false;
+                    }
+                    else if (expectingRunningResponse && /\d|K/i.test(messageText)) {
+                        const km = parseFloat(messageText.match(/\d+/)?.[0] || 0);
+                        if (km > 0) {
+                            saveRunToCalendar(km);
+                            addMessageToChat(`您今天跑了 ${km} 公里，真棒！`, false);
+                        } else {
+                            addMessageToChat('請輸入有效的距離', false);
+                        }
+                        expectingRunningResponse = false;
+                    }
+                }
+            }
+
+            messageInput.addEventListener('keypress', function(event) {
+                if (event.key === 'Enter') {
+                    handleMessageInput(messageInput.value.trim());
+                }
+            });
+
+            sendButton.addEventListener('click', function() {
+                handleMessageInput(messageInput.value.trim());
+            });
+
+            // 初始化
+            loadChatHistory();
+
+            // 設置當前頁面的導航按鈕為激活狀態
+            const currentPath = window.location.pathname.replace(/^\/+/, '');
+            document.querySelectorAll('.nav-button').forEach(button => {
+                const href = button.getAttribute('href').replace(/^\/+/, '');
+                if (
+                    (href === 'index.html' && (currentPath === '' || currentPath.endsWith('index.html')))
+                    || (href !== 'index.html' && currentPath.endsWith(href))
+                ) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+
+            // ====== 登入/註冊 Modal 控制 ======
+            function showAuthModal() {
+                document.getElementById('auth-modal').style.display = 'flex';
+            }
+            function hideAuthModal() {
+                document.getElementById('auth-modal').style.display = 'none';
+                document.getElementById('auth-error').textContent = '';
+            }
+            document.getElementById('auth-modal').addEventListener('click', function(e) {
+                if (e.target === this) hideAuthModal();
+            });
+
+            // ====== 登入/註冊/同步 API ======
+            async function login(username, password) {
+                const res = await fetch('http://localhost:3001/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('currentUser', username);
+                    await syncFromCloud();
+                    hideAuthModal();
+                    location.reload();
+                } else {
+                    document.getElementById('auth-error').textContent = data.error || '登入失敗';
+                }
+            }
+            async function register(username, password) {
+                const res = await fetch('http://localhost:3001/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                if (res.ok) {
+                    await login(username, password);
+                } else {
+                    document.getElementById('auth-error').textContent = '註冊失敗';
+                }
+            }
+            async function syncFromCloud() {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await fetch('http://localhost:3001/api/data', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const { data } = await res.json();
+                if (data) {
+                    // 你可以根據你的資料結構，將 data 寫回 localStorage
+                    Object.keys(data).forEach(key => {
+                        localStorage.setItem(key, JSON.stringify(data[key]));
+                    });
+                }
+            }
+            async function syncToCloud() {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                // 收集所有你想同步的 localStorage 資料
+                const currentUser = getCurrentUser();
+                const chatHistory = JSON.parse(localStorage.getItem(`chatHistory_${currentUser}`) || '[]');
+                const calendarEvents = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                await fetch('http://localhost:3001/api/data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ data: {
+                        [`chatHistory_${currentUser}`]: chatHistory,
+                        [`calendarEvents_${currentUser}`]: calendarEvents
+                    }})
+                });
+            }
+
+            // ====== 綁定登入/註冊按鈕 ======
+            document.getElementById('login-btn').onclick = function() {
+                const u = document.getElementById('auth-username').value.trim();
+                const p = document.getElementById('auth-password').value.trim();
+                if (u && p) login(u, p);
+            };
+            document.getElementById('register-btn').onclick = function() {
+                const u = document.getElementById('auth-username').value.trim();
+                const p = document.getElementById('auth-password').value.trim();
+                if (u && p) register(u, p);
+            };
+
+            // ====== 自動同步：每次資料變動時呼叫 syncToCloud() ======
+            // 例如你在 saveMessageToHistory/saveRunToCalendar/saveBikeToCalendar/saveSwimToCalendar 裡加上
+            // if (localStorage.getItem('token')) syncToCloud();
+
+            // ====== 首次載入時檢查登入狀態 ======
+            window.addEventListener('DOMContentLoaded', function() {
+                // 如果有 token 就自動同步雲端資料
+                if (localStorage.getItem('token')) {
+                    syncFromCloud();
+                }
+                // 你可以在這裡加一個「登入」按鈕，或在會員頁加「登出」功能
+                // 如果想強制用戶登入才用同步功能，可在這裡 showAuthModal()
+            });
+        });
+    </script>
+</body>
+</html>

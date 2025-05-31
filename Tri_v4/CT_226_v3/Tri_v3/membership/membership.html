@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>會員登入</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        }
+        body {
+            width: 100vw;
+            min-height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            height: 100dvh;
+            min-height: 0;
+            background: rgba(34, 40, 49, 0.98);
+            border-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            overflow: hidden;
+            border: 1.5px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top);
+            position: relative;
+        }
+        .header {
+            width: 100%;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            color: white;
+            text-align: center;
+            padding: 20px 0 16px 0;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .form-container {
+            width: 100%;
+            padding: 20px;
+            padding-bottom: 80px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        .form-group label {
+            display: block;
+            color: #b0bec5;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 12px 14px;
+            border-radius: 8px;
+            border: none;
+            background: #181c22;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: background 0.2s;
+            box-sizing: border-box;
+        }
+        .form-group input:focus {
+            background: #23272f;
+        }
+        .button-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .button-container button {
+            width: 100%;
+            padding: 15px 0;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            border: none;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,188,212,0.10);
+            transition: background 0.3s, transform 0.2s;
+        }
+        .button-container button:hover {
+            background: linear-gradient(90deg, #078282 0%, #12214e 100%);
+            transform: translateY(-2px) scale(1.04);
+        }
+        .switch-form {
+            text-align: center;
+            margin-top: 20px;
+            color: #b0bec5;
+            font-size: 14px;
+        }
+        .switch-form a {
+            color: #00bcd4;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .switch-form a:hover {
+            text-decoration: underline;
+        }
+        .error-message {
+            color: #ff867f;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        .nav-buttons {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(34, 40, 49, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #b0bec5;
+            text-decoration: none;
+            font-size: 12px;
+            padding: 8px;
+            transition: color 0.3s;
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        .nav-button.active {
+            color: #00bcd4;
+        }
+        .nav-button img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+        /* 聊天按鈕特殊樣式 */
+        .nav-button[href*="chat"] {
+            position: relative;
+            margin-top: 0;
+            min-height: 54px;
+        }
+        .nav-button[href*="chat"] img {
+            position: absolute;
+            top: -18px;
+        
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #00bcd4 0%, #2196f3 100%);
+            border-radius: 50%;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0,188,212,0.3),
+                        inset 0 -2px 6px rgba(0,0,0,0.2),
+                        inset 0 2px 6px rgba(255,255,255,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .nav-button[href*="chat"]:hover img {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,188,212,0.4),
+                        inset 0 -2px 6px rgba(0,0,0,0.2),
+                        inset 0 2px 6px rgba(255,255,255,0.2);
+        }
+        .nav-button span {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #fff;
+        }
+        .nav-button:hover span,
+        .nav-button.active span {
+            color: #00bcd4;
+        }
+        .nav-button[href*="chat"] span {
+            font-weight: 600;
+        }
+        @media (max-width: 500px) {
+            .container {
+                max-width: 100vw;
+                height: 100dvh;
+                min-height: 0;
+                border-radius: 0;
+                padding-bottom: 60px;
+            }
+            .nav-buttons {
+                max-width: 100vw;
+                border-radius: 0;
+            }
+        }
+        /* 自定義滾動條樣式 */
+        .form-container::-webkit-scrollbar {
+            width: 8px;
+        }
+        .form-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+        .form-container::-webkit-scrollbar-thumb {
+            background: rgba(0,188,212,0.3);
+            border-radius: 4px;
+        }
+        .form-container::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,188,212,0.5);
+        }
+        /* Firefox 滾動條樣式 */
+        .form-container {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,188,212,0.3) rgba(255,255,255,0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">會員登入</div>
+        <div class="form-container" id="formContainer">
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="username">使用者名稱</label>
+                    <input type="text" id="username" placeholder="請輸入使用者名稱" required>
+                    <div class="error-message" id="usernameError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="password">密碼</label>
+                    <input type="password" id="password" required>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+                <div class="button-container">
+                    <button type="submit">登入</button>
+                </div>
+                <div class="switch-form">
+                    <div style="margin-bottom: 10px;">
+                        還沒有帳號？<a id="switchToRegister">立即註冊</a>
+                    </div>
+                    <div>
+                        <a id="forgotPassword">忘記密碼？</a>
+                    </div>
+                </div>
+            </form>
+
+            <form id="registerForm" style="display: none;">
+                <div class="form-group">
+                    <label for="regUsername">使用者名稱</label>
+                    <input type="text" id="regUsername" placeholder="請輸入使用者名稱" required>
+                    <div class="error-message" id="regUsernameError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="regPassword">密碼</label>
+                    <input type="password" id="regPassword" required>
+                    <div class="error-message" id="regPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmPassword">確認密碼</label>
+                    <input type="password" id="confirmPassword" required>
+                    <div class="error-message" id="confirmPasswordError"></div>
+                </div>
+                <div class="button-container">
+                    <button type="submit">註冊</button>
+                </div>
+                <div class="switch-form">
+                    已有帳號？<a id="switchToLogin">立即登入</a>
+                </div>
+            </form>
+
+            <form id="forgotPasswordForm" style="display: none;">
+                <div class="form-group">
+                    <label for="forgotUsername">使用者名稱</label>
+                    <input type="text" id="forgotUsername" placeholder="請輸入使用者名稱" required>
+                    <div class="error-message" id="forgotUsernameError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="newPassword">新密碼</label>
+                    <input type="password" id="newPassword" required>
+                    <div class="error-message" id="newPasswordError"></div>
+                </div>
+                <div class="form-group">
+                    <label for="confirmNewPassword">確認新密碼</label>
+                    <input type="password" id="confirmNewPassword" required>
+                    <div class="error-message" id="confirmNewPasswordError"></div>
+                </div>
+                <div class="button-container">
+                    <button type="submit">重設密碼</button>
+                </div>
+                <div class="switch-form">
+                    <a id="backToLogin">返回登入</a>
+                </div>
+            </form>
+        </div>
+        <div class="profile-container" id="profileContainer" style="display:none; width:100%; padding:32px 20px 80px 20px; box-sizing:border-box; flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;">
+            <div style="width:100%; max-width:320px; background:rgba(255,255,255,0.05); border-radius:16px; padding:28px 18px; color:#fff; box-shadow:0 4px 16px rgba(0,0,0,0.1); border:1px solid rgba(255,255,255,0.08); text-align:center;">
+                <img src="../images/user.svg" alt="會員頭像" style="width:64px;height:64px;border-radius:50%;background:#23272f;margin-bottom:12px;">
+                <h2 id="profileUsername" style="margin:0 0 8px 0;font-size:20px;color:#00bcd4;">會員名稱</h2>
+                <div style="font-size:15px;color:#b0bec5;margin-bottom:18px;">歡迎回來！</div>
+                <button id="logoutBtn" style="width:100%;padding:12px 0;background:linear-gradient(90deg,#12214e 0%,#078282 100%);border:none;font-size:16px;cursor:pointer;border-radius:10px;color:white;font-weight:bold;box-shadow:0 2px 8px rgba(0,188,212,0.10);transition:background 0.3s,transform 0.2s;">登出</button>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <a href="../index.html" class="nav-button">
+                <img src="../images/home.svg" alt="首頁">
+                <span>首頁</span>
+            </a>
+            <a href="../stats.html" class="nav-button">
+                <img src="../images/stats.svg" alt="統計">
+                <span>統計</span>
+            </a>
+            <a href="../chat/chat_v5_CT226.html" class="nav-button">
+                <img src="../images/chat.svg" alt="聊天">
+                <span>聊天</span>
+            </a>
+            <a href="../clendar/clendar.html" class="nav-button">
+                <img src="../images/calendar.svg" alt="日曆">
+                <span>日曆</span>
+            </a>
+            <a href="../membership/membership.html" class="nav-button active">
+                <img src="../images/user.svg" alt="會員">
+                <span>會員</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const forgotPasswordForm = document.getElementById('forgotPasswordForm');
+            const switchToRegister = document.getElementById('switchToRegister');
+            const switchToLogin = document.getElementById('switchToLogin');
+            const forgotPassword = document.getElementById('forgotPassword');
+            const backToLogin = document.getElementById('backToLogin');
+            const header = document.querySelector('.header');
+            const formContainer = document.getElementById('formContainer');
+            const profileContainer = document.getElementById('profileContainer');
+            const profileUsername = document.getElementById('profileUsername');
+            const logoutBtn = document.getElementById('logoutBtn');
+
+            // 檢查是否已登入
+            function checkLogin() {
+                const currentUser = localStorage.getItem('currentUser');
+                if (currentUser) {
+                    // 顯示會員資料
+                    formContainer.style.display = 'none';
+                    profileContainer.style.display = 'flex';
+                    profileUsername.textContent = currentUser;
+                } else {
+                    // 顯示登入/註冊表單
+                    formContainer.style.display = 'block';
+                    profileContainer.style.display = 'none';
+                }
+            }
+
+            // 登出
+            if (logoutBtn) {
+                logoutBtn.addEventListener('click', () => {
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('currentUser');
+                    checkLogin();
+                });
+            }
+
+            // 切換表單顯示
+            switchToRegister.addEventListener('click', () => {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'block';
+                forgotPasswordForm.style.display = 'none';
+                header.textContent = '會員註冊';
+            });
+
+            switchToLogin.addEventListener('click', () => {
+                registerForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                forgotPasswordForm.style.display = 'none';
+                header.textContent = '會員登入';
+            });
+
+            forgotPassword.addEventListener('click', () => {
+                loginForm.style.display = 'none';
+                registerForm.style.display = 'none';
+                forgotPasswordForm.style.display = 'block';
+                header.textContent = '重設密碼';
+            });
+
+            backToLogin.addEventListener('click', () => {
+                forgotPasswordForm.style.display = 'none';
+                loginForm.style.display = 'block';
+                header.textContent = '會員登入';
+            });
+
+            // ====== 雲端同步 API ======
+            async function syncFromCloud() {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const res = await fetch('http://localhost:3001/api/data', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const { data } = await res.json();
+                if (data) {
+                    Object.keys(data).forEach(key => {
+                        localStorage.setItem(key, JSON.stringify(data[key]));
+                    });
+                }
+            }
+            async function syncToCloud() {
+                const token = localStorage.getItem('token');
+                if (!token) return;
+                const currentUser = localStorage.getItem('currentUser');
+                const calendarEvents = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                const schedules = JSON.parse(localStorage.getItem('schedules') || '[]');
+                await fetch('http://localhost:3001/api/data', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: JSON.stringify({ data: {
+                        [`calendarEvents_${currentUser}`]: calendarEvents,
+                        'schedules': schedules
+                    }})
+                });
+            }
+
+            // 登入表單提交
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('username').value.trim();
+                const password = document.getElementById('password').value.trim();
+                document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+                // 呼叫後端 API
+                const res = await fetch('http://localhost:3001/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                if (data.token) {
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('currentUser', username);
+                    await syncFromCloud();
+                    window.location.href = '../index.html';
+                } else {
+                    document.getElementById('usernameError').textContent = data.error || '使用者名稱或密碼錯誤';
+                    document.getElementById('usernameError').style.display = 'block';
+                }
+            });
+
+            // 註冊表單提交
+            registerForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const username = document.getElementById('regUsername').value.trim();
+                const password = document.getElementById('regPassword').value.trim();
+                const confirmPassword = document.getElementById('confirmPassword').value.trim();
+                document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+                if (password !== confirmPassword) {
+                    document.getElementById('confirmPasswordError').textContent = '密碼不一致';
+                    document.getElementById('confirmPasswordError').style.display = 'block';
+                    return;
+                }
+                // 呼叫後端 API
+                const res = await fetch('http://localhost:3001/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                if (res.ok) {
+                    // 自動登入
+                    const loginRes = await fetch('http://localhost:3001/api/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ username, password })
+                    });
+                    const loginData = await loginRes.json();
+                    if (loginData.token) {
+                        localStorage.setItem('token', loginData.token);
+                        localStorage.setItem('currentUser', username);
+                        await syncFromCloud();
+                        window.location.href = '../index.html';
+                    }
+                } else {
+                    document.getElementById('regUsernameError').textContent = '註冊失敗';
+                    document.getElementById('regUsernameError').style.display = 'block';
+                }
+            });
+
+            // 忘記密碼表單提交（保留原本本地驗證）
+            forgotPasswordForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const username = document.getElementById('forgotUsername').value;
+                const newPassword = document.getElementById('newPassword').value;
+                const confirmNewPassword = document.getElementById('confirmNewPassword').value;
+                document.querySelectorAll('.error-message').forEach(el => el.style.display = 'none');
+                if (newPassword !== confirmNewPassword) {
+                    document.getElementById('confirmNewPasswordError').textContent = '密碼不一致';
+                    document.getElementById('confirmNewPasswordError').style.display = 'block';
+                    return;
+                }
+                // 這裡可根據你的後端 API 擴充忘記密碼功能
+                document.getElementById('forgotUsernameError').textContent = '請聯絡管理員重設密碼';
+                document.getElementById('forgotUsernameError').style.display = 'block';
+            });
+
+            // 檢查登入狀態
+            checkLogin();
+
+            // 設置當前頁面的導航按鈕為激活狀態
+            const currentPath = window.location.pathname.replace(/^\/+/, '');
+            document.querySelectorAll('.nav-button').forEach(button => {
+                const href = button.getAttribute('href').replace(/^\/+/, '');
+                if (
+                    (href === 'index.html' && (currentPath === '' || currentPath.endsWith('index.html')))
+                    || (href !== 'index.html' && currentPath.endsWith(href))
+                ) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

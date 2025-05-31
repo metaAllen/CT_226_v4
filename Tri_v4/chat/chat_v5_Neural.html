@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鐵人三項訓練助手</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            margin: 0;
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 420px;
+            height: 700px;
+            background: rgba(34, 40, 49, 0.98);
+            border-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            overflow: hidden;
+            border: 1.5px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+        }
+        .header {
+            width: 100%;
+            background: linear-gradient(90deg, #00bcd4 0%, #2196f3 100%);
+            color: white;
+            text-align: center;
+            padding: 20px 0 16px 0;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .chat-box {
+            flex: 1;
+            width: 100%;
+            background: transparent;
+            padding: 18px 16px 8px 16px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            border-bottom: 1px solid #2d3748;
+            transition: background 0.3s;
+        }
+        .message {
+            padding: 14px 18px;
+            border-radius: 18px 18px 18px 6px;
+            max-width: 80%;
+            font-size: 15px;
+            line-height: 1.7;
+            white-space: pre-line;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s forwards;
+        }
+        .message.bot {
+            background: linear-gradient(90deg, #555 0%, #607d8b 100%);
+            color: #fff;
+            align-self: flex-start;
+            border-bottom-left-radius: 4px;
+        }
+        .message.user {
+            background: linear-gradient(90deg, #00bcd4 0%, #2196f3 100%);
+            color: #fff;
+            align-self: flex-end;
+            border-bottom-right-radius: 4px;
+        }
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        .button-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            padding: 16px 16px 10px 16px;
+            width: 100%;
+            background: transparent;
+        }
+        .button-container button {
+            background: linear-gradient(90deg, #00bcd4 0%, #2196f3 100%);
+            border: none;
+            padding: 15px 0;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 10px;
+            color: white;
+            font-weight: bold;
+            box-shadow: 0 2px 8px rgba(0,188,212,0.10);
+            transition: background 0.3s, transform 0.2s;
+        }
+        .button-container button:hover {
+            background: linear-gradient(90deg, #2196f3 0%, #00bcd4 100%);
+            transform: translateY(-2px) scale(1.04);
+        }
+        .input-area {
+            width: 100%;
+            background: #23272f;
+            display: flex;
+            align-items: center;
+            padding: 12px 16px 12px 16px;
+            gap: 10px;
+            border-top: 1px solid #2d3748;
+        }
+        .input-area input {
+            flex: 1;
+            background: #181c22;
+            border: none;
+            border-radius: 8px;
+            padding: 12px 14px;
+            color: #fff;
+            font-size: 15px;
+            outline: none;
+            transition: background 0.2s;
+        }
+        .input-area input:focus {
+            background: #23272f;
+        }
+        .input-area button {
+            background: linear-gradient(90deg, #00bcd4 0%, #2196f3 100%);
+            border: none;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 16px;
+            font-weight: bold;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: background 0.3s, transform 0.2s;
+        }
+        .input-area button:hover {
+            background: linear-gradient(90deg, #2196f3 0%, #00bcd4 100%);
+            transform: scale(1.05);
+        }
+        .footer {
+            background: linear-gradient(90deg, #232526 0%, #414345 100%);
+            width: 100%;
+            text-align: center;
+            padding: 12px 0 10px 0;
+            color: #b0bec5;
+            font-size: 14px;
+            letter-spacing: 1px;
+            box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
+        }
+        @media (max-width: 500px) {
+            .chat-container {
+                max-width: 100vw;
+                height: 100vh;
+                border-radius: 0;
+            }
+            .chat-box {
+                padding: 10px 4vw 8px 4vw;
+            }
+            .button-container, .input-area {
+                padding-left: 4vw;
+                padding-right: 4vw;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">鐵人三項訓練助手</div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="button-container">
+            <button onclick="showTodaySchedule()">本日課表</button>
+            <button onclick="showWeekSchedule()">本週課表</button>
+        </div>
+        <form class="input-area" onsubmit="handleUserInput(event)">
+            <input id="user-input" type="text" placeholder="請輸入訊息... (僅展示)" autocomplete="off" disabled />
+            <button type="submit" disabled>送出</button>
+        </form>
+        <div class="footer">v3.0 神經網路訓練系統</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script>
+        let chatBox;
+        const model = tf.sequential();
+        let trainingData = [];
+        let isModelTrained = false;
+
+        // 1. 依據你提供的圖表（2~4月）精確重建課表（一天只一項運動，距離/時間完全依圖表，週分布與距離與圖表一致）
+        // [週次, 星期(1~7), 上週運動類型, 上週數值, 今日運動類型, 今日數值, 單位]
+        // 運動類型: 0=休息, 1=游泳, 2=騎車, 3=跑步
+        // 單位: 'km' 或 'min' 或 'rest'
+        const planTable = [
+            // 2月 week 1
+            [1, 1, 0, 0, 0, 0, 'rest'],
+            [1, 2, 0, 0, 3, 5, 'km'],
+            [1, 3, 3, 5, 2, 40, 'km'],
+            [1, 4, 2, 40, 3, 8, 'km'],
+            [1, 5, 3, 8, 1, 2.5, 'km'],
+            [1, 6, 1, 2.5, 2, 70, 'km'],
+            [1, 7, 2, 70, 3, 10, 'km'],
+            // week 2
+            [2, 1, 3, 10, 0, 0, 'rest'],
+            [2, 2, 0, 0, 2, 50, 'km'],
+            [2, 3, 2, 50, 3, 8, 'km'],
+            [2, 4, 3, 8, 1, 2.5, 'km'],
+            [2, 5, 1, 2.5, 2, 70, 'km'],
+            [2, 6, 2, 70, 3, 12, 'km'],
+            [2, 7, 3, 12, 1, 3, 'km'],
+            // week 3
+            [3, 1, 1, 3, 0, 0, 'rest'],
+            [3, 2, 0, 0, 2, 50, 'km'],
+            [3, 3, 2, 50, 3, 8, 'km'],
+            [3, 4, 3, 8, 1, 2.5, 'km'],
+            [3, 5, 1, 2.5, 2, 70, 'km'],
+            [3, 6, 2, 70, 3, 12, 'km'],
+            [3, 7, 3, 12, 1, 3, 'km'],
+            // week 4
+            [4, 1, 1, 3, 0, 0, 'rest'],
+            [4, 2, 0, 0, 2, 60, 'km'],
+            [4, 3, 2, 60, 3, 10, 'km'],
+            [4, 4, 3, 10, 1, 2, 'km'],
+            [4, 5, 1, 2, 2, 50, 'km'],
+            [4, 6, 2, 50, 3, 12, 'km'],
+            [4, 7, 3, 12, 1, 2.5, 'km'],
+            // 3月 week 1
+            [5, 1, 1, 2.5, 0, 0, 'rest'],
+            [5, 2, 0, 0, 2, 60, 'km'],
+            [5, 3, 2, 60, 3, 10, 'km'],
+            [5, 4, 3, 10, 1, 2.5, 'km'],
+            [5, 5, 1, 2.5, 2, 90, 'km'],
+            [5, 6, 2, 90, 3, 20, 'km'],
+            [5, 7, 3, 20, 1, 3, 'km'],
+            // week 2
+            [6, 1, 1, 3, 0, 0, 'rest'],
+            [6, 2, 0, 0, 2, 70, 'km'],
+            [6, 3, 2, 70, 3, 12, 'km'],
+            [6, 4, 3, 12, 1, 2.5, 'km'],
+            [6, 5, 1, 2.5, 2, 90, 'km'],
+            [6, 6, 2, 90, 3, 20, 'km'],
+            [6, 7, 3, 20, 1, 3, 'km'],
+            // week 3
+            [7, 1, 1, 3, 0, 0, 'rest'],
+            [7, 2, 0, 0, 2, 80, 'km'],
+            [7, 3, 2, 80, 3, 15, 'km'],
+            [7, 4, 3, 15, 1, 3, 'km'],
+            [7, 5, 1, 3, 2, 100, 'km'],
+            [7, 6, 2, 100, 3, 22, 'km'],
+            [7, 7, 3, 22, 1, 3.5, 'km'],
+            // week 4
+            [8, 1, 1, 3.5, 0, 0, 'rest'],
+            [8, 2, 0, 0, 2, 110, 'km'],
+            [8, 3, 2, 110, 3, 25, 'km'],
+            [8, 4, 3, 25, 1, 3.5, 'km'],
+            [8, 5, 1, 3.5, 0, 0, 'rest'],
+            [8, 6, 0, 0, 0, 0, 'rest'],
+            [8, 7, 0, 0, 0, 0, 'rest'],
+            // 4月 week 1
+            [9, 1, 0, 0, 3, 10, 'km'],
+            [9, 2, 3, 10, 1, 2, 'km'],
+            [9, 3, 1, 2, 2, 50, 'km'],
+            [9, 4, 2, 50, 3, 8, 'km'],
+            [9, 5, 3, 8, 1, 3, 'km'],
+            [9, 6, 1, 3, 2, 70, 'km'],
+            [9, 7, 2, 70, 3, 12, 'km'],
+            // week 2
+            [10, 1, 3, 12, 1, 2.5, 'km'],
+            [10, 2, 1, 2.5, 2, 80, 'km'],
+            [10, 3, 2, 80, 3, 8, 'km'],
+            [10, 4, 3, 8, 1, 2, 'km'],
+            [10, 5, 1, 2, 2, 60, 'km'],
+            [10, 6, 2, 60, 3, 10, 'km'],
+            [10, 7, 3, 10, 1, 2.5, 'km'],
+            // week 3
+            [11, 1, 1, 2.5, 2, 40, 'km'],
+            [11, 2, 2, 40, 3, 15, 'km'],
+            [11, 3, 3, 15, 1, 3, 'km'],
+            [11, 4, 1, 3, 2, 80, 'km'],
+            [11, 5, 2, 80, 3, 8, 'km'],
+            [11, 6, 3, 8, 1, 2, 'km'],
+            [11, 7, 1, 2, 2, 60, 'km'],
+            // week 4
+            [12, 1, 2, 60, 0, 0, 'rest'],
+            [12, 2, 0, 0, 0, 0, 'rest'],
+            [12, 3, 0, 0, 0, 0, 'rest'],
+            [12, 4, 0, 0, 0, 0, 'rest'],
+            [12, 5, 0, 0, 0, 0, 'rest'],
+            [12, 6, 0, 0, 0, 0, 'rest'],
+            [12, 7, 0, 0, 0, 0, 'rest'],
+        ];
+
+        // 2. 轉成神經網路訓練資料
+        function addPlanTrainingData() {
+            for (let i = 0; i < planTable.length; i++) {
+                const [week, day, prevType, prevValue, type, value, unit] = planTable[i];
+                trainingData.push({
+                    input: [week, day, prevType, prevValue],
+                    output: [type, value]
+                });
+            }
+        }
+
+        // 3. 初始化神經網路
+        function initModel() {
+            model.add(tf.layers.dense({
+                units: 16,
+                activation: 'relu',
+                inputShape: [4]
+            }));
+            model.add(tf.layers.dense({units: 8, activation: 'relu'}));
+            model.add(tf.layers.dense({units: 2, activation: 'linear'}));
+            model.compile({optimizer: 'adam', loss: 'meanSquaredError'});
+        }
+
+        async function trainModel() {
+            const inputs = tf.tensor2d(trainingData.map(d => d.input));
+            const outputs = tf.tensor2d(trainingData.map(d => d.output));
+            await model.fit(inputs, outputs, {
+                epochs: 800,
+                batchSize: 4,
+                verbose: 0
+            });
+            isModelTrained = true;
+        }
+
+        // 4. 預測今日課表
+        async function predictPlan(week, day, prevType, prevValue) {
+            if(!isModelTrained) await trainModel();
+            const input = tf.tensor2d([[week, day, prevType, prevValue]]);
+            const prediction = model.predict(input);
+            const result = await prediction.array();
+            return result[0];
+        }
+
+        // 5. 產生今日課表
+        async function generateTodayPlan() {
+            const today = new Date();
+            // 以2月1日為起點
+            const start = new Date(2025, 1, 1);
+            const diff = Math.floor((today - start) / (1000*60*60*24));
+            const week = Math.floor(diff/7)+1;
+            const day = ((today.getDay()+6)%7)+1;
+            // 取前一天的數據
+            let prev = planTable.find(p => p[0] === week && p[1] === day-1) || [0,0,0,0,0,0,'rest'];
+            const [type, value] = await predictPlan(week, day, prev[4], prev[5]);
+            // 找單位
+            let unit = 'km';
+            if(Math.round(type) === 2 && value < 30) unit = 'min';
+            if(Math.round(type) === 0) unit = 'rest';
+            return {type: Math.round(type), value, unit};
+        }
+
+        // 6. 產生本週課表
+        async function generateWeekPlan() {
+            const today = new Date();
+            const start = new Date(2025, 1, 1);
+            const diff = Math.floor((today - start) / (1000*60*60*24));
+            const week = Math.floor(diff/7)+1;
+            let plans = [];
+            let prev = [0,0,0,0,0,0,'rest'];
+            for(let i=1;i<=7;i++){
+                const [type, value] = await predictPlan(week, i, prev[4], prev[5]);
+                let unit = 'km';
+                if(Math.round(type) === 2 && value < 30) unit = 'min';
+                if(Math.round(type) === 0) unit = 'rest';
+                plans.push({type: Math.round(type), value, unit});
+                prev = [week, i, prev[4], prev[5], type, value, unit];
+            }
+            return plans;
+        }
+
+        function planToText(plan) {
+            const typeMap = ['休息', '游泳', '騎車', '跑步'];
+            if(plan.type === 0 || plan.unit === 'rest') return `${typeMap[plan.type]} 休息`;
+            let unit = plan.unit;
+            if(plan.type === 2 && plan.unit === 'min') return `${typeMap[plan.type]} ${Math.round(plan.value)}min`;
+            return `${typeMap[plan.type]} ${plan.value.toFixed(1)}${unit}`;
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            chatBox = document.getElementById('chat-box');
+            addPlanTrainingData();
+            initModel();
+            await trainModel();
+            addMessageToChat("神經網路已學習226專業課表！\n請選擇查詢模式");
+        });
+
+        function addMessageToChat(text, isBot = true) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isBot ? 'bot' : 'user'}`;
+            messageDiv.textContent = text;
+            chatBox.appendChild(messageDiv);
+            setTimeout(() => {
+                messageDiv.style.opacity = 1;
+                messageDiv.style.transform = 'translateY(0)';
+            }, 10);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function showTodaySchedule() {
+            const plan = await generateTodayPlan();
+            const text = `今日訓練建議：\n${planToText(plan)}`;
+            addMessageToChat(text);
+        }
+
+        async function showWeekSchedule() {
+            const plans = await generateWeekPlan();
+            let message = '本週訓練計畫：\n';
+            for(let i=0;i<plans.length;i++){
+                message += `\n週${i+1}：${planToText(plans[i])}`;
+            }
+            addMessageToChat(message);
+        }
+
+        function handleUserInput(e) {
+            e.preventDefault();
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #181818;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 400px;
+            height: 700px;
+            background: #2a2a2a;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            width: 100%;
+            background-color: #1f1f1f;
+            color: white;
+            text-align: center;
+            padding: 15px 0;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .chat-box {
+            flex: 1;
+            width: 100%;
+            background-color: #333;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-bottom: 1px solid #444;
+        }
+
+        .message {
+            padding: 12px;
+            border-radius: 12px;
+            max-width: 80%;
+            font-size: 14px;
+            line-height: 1.5;
+            white-space: pre-line;
+        }
+
+        .message.bot {
+            background-color: #555;
+            color: white;
+            align-self: flex-start;
+        }
+
+        .button-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            padding: 15px;
+            width: 100%;
+            background-color: #222;
+        }
+
+        .button-container button {
+            background-color: #00bcd4;
+            border: none;
+            padding: 15px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+        }
+
+        .button-container button:hover {
+            background-color: #0097a7;
+        }
+
+        .footer {
+            background-color: #222;
+            width: 100%;
+            text-align: center;
+            padding: 10px;
+            color: white;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">Chatbot</div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="button-container">
+            <button onclick="showTodaySchedule()">本日課表</button>
+            <button onclick="showWeekSchedule()">本週課表</button>
+        </div>
+        <div class="footer">快捷清單 ▼</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const baseline = new Date(2025, 0, 1);
+
+        // Full dataset extracted from the PDF
+        const trainingData = [
+            { input: [0], output: [2.0, 0, 0, 0] }, // Day 1: Swim 2.0km
+            { input: [1], output: [0, 30.0, 0, 0] }, // Day 2: Bike 30.0km
+            { input: [2], output: [0, 0, 5.0, 0] }, // Day 3: Run 5.0km
+            { input: [3], output: [0, 40.0, 0, 0] }, // Day 4: Bike 40.0km
+            { input: [4], output: [0, 0, 8.0, 0] }, // Day 5: Run 8.0km
+            { input: [5], output: [2.5, 0, 0, 0] }, // Day 6: Swim 2.5km
+            { input: [6], output: [0, 0, 0, 1] }, // Day 7: Rest
+            { input: [7], output: [3.0, 0, 0, 0] }, // Day 8: Swim 3.0km
+            { input: [8], output: [0, 50.0, 0, 0] }, // Day 9: Bike 50.0km
+            { input: [9], output: [0, 0, 10.0, 0] }, // Day 10: Run 10.0km
+            { input: [10], output: [0, 60.0, 0, 0] }, // Day 11: Bike 60.0km
+            { input: [11], output: [0, 0, 12.0, 0] }, // Day 12: Run 12.0km
+            { input: [12], output: [3.5, 0, 0, 0] }, // Day 13: Swim 3.5km
+            { input: [13], output: [0, 0, 0, 1] }, // Day 14: Rest
+            { input: [14], output: [0, 80.0, 0, 0] }, // Day 15: Bike 80.0km
+            { input: [15], output: [0, 0, 20.0, 0] }, // Day 16: Run 20.0km
+            { input: [16], output: [4.0, 0, 0, 0] }, // Day 17: Swim 4.0km
+            { input: [17], output: [0, 70.0, 0, 0] }, // Day 18: Bike 70.0km
+            { input: [18], output: [0, 0, 15.0, 0] }, // Day 19: Run 15.0km
+            { input: [19], output: [3.0, 0, 0, 0] }, // Day 20: Swim 3.0km
+            { input: [20], output: [0, 90.0, 0, 0] }, // Day 21: Bike 90.0km
+            { input: [21], output: [0, 0, 0, 1] }, // Day 22: Rest
+            { input: [22], output: [0, 100.0, 0, 0] }, // Day 23: Bike 100.0km
+            { input: [23], output: [0, 0, 25.0, 0] }, // Day 24: Run 25.0km
+            { input: [24], output: [4.5, 0, 0, 0] }, // Day 25: Swim 4.5km
+            { input: [25], output: [0, 110.0, 0, 0] }, // Day 26: Bike 110.0km
+            { input: [26], output: [0, 0, 30.0, 0] }, // Day 27: Run 30.0km
+            { input: [27], output: [5.0, 0, 0, 0] }, // Day 28: Swim 5.0km
+            { input: [28], output: [0, 0, 0, 1] }, // Day 29: Rest
+        ];
+
+        const model = tf.sequential();
+        model.add(tf.layers.dense({ inputShape: [1], units: 16, activation: 'relu' }));
+        model.add(tf.layers.dense({ units: 4, activation: 'linear' }));
+        model.compile({ optimizer: 'adam', loss: 'meanSquaredError' });
+
+        async function trainModel() {
+            const inputs = tf.tensor2d(trainingData.map(d => d.input));
+            const outputs = tf.tensor2d(trainingData.map(d => d.output));
+            await model.fit(inputs, outputs, { epochs: 500, shuffle: true });
+        }
+
+        async function predict(dateString) {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                throw new Error('Invalid date format');
+            }
+
+            const daysSinceBaseline = Math.floor((date - baseline) / (1000 * 60 * 60 * 24));
+            const inputTensor = tf.tensor2d([[daysSinceBaseline % trainingData.length]]);
+            const prediction = model.predict(inputTensor);
+            const [swim, bike, run, rest] = (await prediction.array())[0];
+
+            return {
+                swim: swim > 0 ? `${(swim).toFixed(1)} km` : "N/A",
+                bike: bike > 0 ? `${(bike).toFixed(1)} km` : "N/A",
+                run: run > 0 ? `${(run).toFixed(1)} km` : "N/A",
+                rest: rest > 0.5 ? "休息" : "訓練日",
+            };
+        }
+
+        function addMessageToChat(messageText) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', 'bot');
+            messageDiv.textContent = messageText;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function showTodaySchedule() {
+            const today = new Date().toISOString().split('T')[0];
+            predict(today).then(schedule => {
+                addMessageToChat(`今日課表:\n\nSwim: ${schedule.swim}\nBike: ${schedule.bike}\nRun: ${schedule.run}\nRest: ${schedule.rest}`);
+            }).catch(error => {
+                addMessageToChat(error.message);
+            });
+        }
+
+        function showWeekSchedule() {
+            let messages = "本週課表:\n\n";
+            const promises = [];
+            for (let i = 0; i < 7; i++) {
+                const date = new Date();
+                date.setDate(date.getDate() + i);
+                const dateString = date.toISOString().split('T')[0];
+                promises.push(predict(dateString).then(schedule => {
+                    messages += `${dateString}:\nSwim: ${schedule.swim}\nBike: ${schedule.bike}\nRun: ${schedule.run}\nRest: ${schedule.rest}\n\n`;
+                }));
+            }
+            Promise.all(promises).then(() => addMessageToChat(messages)).catch(error => addMessageToChat(error.message));
+        }
+
+        (async () => {
+            await trainModel();
+        })();
+    </script>
+</body>
+</html>

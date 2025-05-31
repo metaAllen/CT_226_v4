@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Chatbot with Neural Network</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 350px;
+            height: 600px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+
+        .chat {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .bubble.user {
+            background-color: #2563eb;
+            color: white;
+            border-top-right-radius: 0;
+        }
+
+        .bubble.bot {
+            background-color: #e5e7eb;
+            color: #1f2937;
+            border-top-left-radius: 0;
+            white-space: pre-wrap;
+        }
+
+        .input-container {
+            padding: 10px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            background-color: #f9fafb;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .input-container button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">Training Chatbot</div>
+        <div class="chat" id="chat-box"></div>
+        <div class="input-container">
+            <input type="text" id="message-input" placeholder="Enter a date (e.g., 2025-01-15)">
+            <button id="send-button">➤</button>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+
+        const baseline = new Date(2025, 0, 1);
+
+        const trainingData = Array.from({ length: 90 }, (_, i) => {
+            const date = new Date(2025, 0, 1 + i);
+            const day = date.getDay();
+            const input = [(date - baseline) / (1000 * 60 * 60 * 24)];
+
+            // Weekday logic: Monday to Friday (1 to 5) - one activity or rest, shorter distances
+            if (day >= 1 && day <= 5) {
+                if (i % 7 === 0) return { input, output: [0, 0, 0, 1] }; // Rest day
+                if (day === 1) return { input, output: [2, 0, 0, 0] }; // Swim (shorter)
+                if (day === 2) return { input, output: [0, 30, 0, 0] }; // Bike (shorter)
+                if (day === 3) return { input, output: [0, 0, 5, 0] }; // Run (shorter)
+                if (day === 4) return { input, output: [2.5, 0, 0, 0] }; // Swim (shorter)
+                if (day === 5) return { input, output: [0, 35, 0, 0] }; // Bike (shorter)
+            }
+
+            // Weekend logic: Saturday and Sunday (6 and 0)
+            if (day === 6) { // Saturday: longer or brick session
+                if (i % 2 === 0) return { input, output: [0, 50, 10, 0] }; // Brick: Bike + Run
+                return { input, output: [0, 80, 0, 0] }; // Long Bike
+            }
+
+            if (day === 0) { // Sunday: longer session
+                if (i % 2 === 0) return { input, output: [3.5, 0, 0, 0] }; // Long Swim
+                return { input, output: [0, 0, 20, 0] }; // Long Run
+            }
+
+            return { input, output: [0, 0, 0, 1] }; // Default Rest
+        });
+
+        const model = tf.sequential();
+        model.add(tf.layers.dense({
+            inputShape: [1],
+            units: 8,
+            activation: 'relu',
+        }));
+        model.add(tf.layers.dense({
+            units: 4, // Swim, Bike, Run, Rest
+            activation: 'softmax',
+        }));
+
+        model.compile({
+            optimizer: 'adam',
+            loss: 'categoricalCrossentropy',
+        });
+
+        const inputs = tf.tensor2d(trainingData.map(d => d.input));
+        const outputs = tf.tensor2d(trainingData.map(d => d.output));
+
+        async function trainModel() {
+            await model.fit(inputs, outputs, {
+                epochs: 100,
+                shuffle: true,
+                callbacks: tf.callbacks.earlyStopping({ patience: 10 }),
+            });
+        }
+
+        async function predict(dateString) {
+            const date = new Date(dateString);
+            if (isNaN(date.getTime())) {
+                throw new Error('Invalid date format');
+            }
+
+            const timestamp = (date - baseline) / (1000 * 60 * 60 * 24);
+            const inputTensor = tf.tensor2d([[timestamp]]);
+            const prediction = model.predict(inputTensor);
+            const [swim, bike, run, rest] = (await prediction.array())[0];
+
+            return {
+                swim: (swim * 10).toFixed(2) + " km",
+                bike: (bike * 100).toFixed(2) + " km",
+                run: (run * 50).toFixed(2) + " km",
+                rest: rest > 0.5 ? "Yes" : "No",
+            };
+        }
+
+        function addMessageToChat(messageText, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', isUser ? 'user' : 'bot');
+
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.classList.add('bubble', isUser ? 'user' : 'bot');
+            bubbleDiv.textContent = messageText;
+
+            messageDiv.appendChild(bubbleDiv);
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        sendButton.addEventListener('click', async () => {
+            const messageText = messageInput.value.trim();
+            if (messageText) {
+                addMessageToChat(messageText, true);
+                messageInput.value = '';
+
+                try {
+                    const { swim, bike, run, rest } = await predict(messageText);
+                    addMessageToChat(`Predicted activities:\nSwim: ${swim}\nBike: ${bike}\nRun: ${run}\nRest: ${rest}`, false);
+                } catch (error) {
+                    addMessageToChat(error.message, false);
+                }
+            }
+        });
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+
+        (async () => {
+            sendButton.disabled = true;
+            await trainModel();
+            sendButton.disabled = false;
+        })();
+    </script>
+</body>
+</html>

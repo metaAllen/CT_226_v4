@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>鐵人三項訓練助手</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; background-color: #181818; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        .chat-container { width: 400px; height: 700px; background: #2a2a2a; border-radius: 15px; display: flex; flex-direction: column; align-items: center; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3); overflow: hidden; }
+        .header { width: 100%; background-color: #1f1f1f; color: white; text-align: center; padding: 15px 0; font-size: 20px; font-weight: bold; }
+        .chat-box { flex: 1; width: 100%; background-color: #333; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; border-bottom: 1px solid #444; }
+        .message { padding: 12px; border-radius: 12px; max-width: 80%; font-size: 14px; line-height: 1.5; white-space: pre-line; }
+        .message.bot { background-color: #555; color: white; align-self: flex-start; }
+        .button-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; padding: 15px; width: 100%; background-color: #222; }
+        .button-container button { background-color: #00bcd4; border: none; padding: 15px; font-size: 16px; cursor: pointer; border-radius: 8px; color: white; font-weight: bold; transition: background-color 0.3s; }
+        .button-container button:hover { background-color: #0097a7; }
+        .footer { background-color: #222; width: 100%; text-align: center; padding: 10px; color: white; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">鐵人三項訓練助手</div>
+        <div class="chat-box" id="chat-box"></div>
+        <div class="button-container">
+            <button onclick="showTodaySchedule()">本日課表</button>
+            <button onclick="showWeekSchedule()">本週課表</button>
+        </div>
+        <div class="footer">v2.5 智能訓練系統</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script>
+        let chatBox;
+        const TRAINING_START = new Date(2025, 1, 1); // 2025-02-01
+        const RACE_DAY = new Date(2025, 3, 26);     // 2025-04-26
+        const DAYS_TOTAL = Math.floor((RACE_DAY - TRAINING_START) / 86400000) + 1;
+        const INTENSITY_INCREASE = { min: 4, max: 6 };
+        const DELOAD_DECREASE = { min: 4, max: 5 };
+
+        const model = tf.sequential({
+            layers: [
+                tf.layers.dense({inputShape: [5], units: 64, activation: 'relu'}),
+                tf.layers.dense({units: 32, activation: 'relu'}),
+                tf.layers.dense({units: 4, activation: 'linear'})
+            ]
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            chatBox = document.getElementById('chat-box');
+            await initializeApp();
+        });
+
+        function addMessageToChat(text, isBot = true) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isBot ? 'bot' : 'user'}`;
+            messageDiv.textContent = text;
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        async function initializeApp() {
+            try {
+                await loadTrainingData();
+                addMessageToChat("訓練計劃同步完成！\n請選擇查詢模式");
+            } catch (error) {
+                addMessageToChat("系統初始化失敗，請刷新頁面重試");
+                console.error(error);
+            }
+        }
+
+        function parseTrainingData() {
+            const data = [];
+            const fullSchedule = {
+                '2025-02': buildFebruarySchedule(),
+                '2025-03': buildMarchSchedule(),
+                '2025-04': buildAprilSchedule()
+            };
+
+            Object.keys(fullSchedule).forEach(monthKey => {
+                const [year, month] = monthKey.split('-');
+                fullSchedule[monthKey].forEach(dayData => {
+                    const date = new Date(year, parseInt(month)-1, dayData.day);
+                    const dayOfWeek = date.getDay();
+                    
+                    // 強制週一為休息日
+                    if (dayOfWeek === 1) {
+                        dayData = {day: dayData.day, rest: true};
+                    }
+
+                    const progress = (date - TRAINING_START) / (RACE_DAY - TRAINING_START);
+                    
+                    data.push({
+                        input: [
+                            progress,
+                            dayOfWeek/7,
+                            Math.sin(progress * Math.PI * 2),
+                            (dayOfWeek === 0 || dayOfWeek === 6) ? 1 : 0,
+                            dayData.isBrick ? 1 : 0
+                        ],
+                        output: [
+                            dayData.swim || 0,
+                            dayData.bike || 0,
+                            dayData.run || 0,
+                            dayData.rest ? 1 : 0
+                        ]
+                    });
+                });
+            });
+            return data;
+        }
+
+        async function loadTrainingData() {
+            try {
+                const trainingData = parseTrainingData();
+                const inputs = tf.tensor2d(trainingData.map(d => d.input));
+                const outputs = tf.tensor2d(trainingData.map(d => d.output));
+
+                model.compile({
+                    optimizer: tf.train.adam(0.001),
+                    loss: 'meanSquaredError'
+                });
+
+                await model.fit(inputs, outputs, {
+                    epochs: 500,
+                    batchSize: 32,
+                    verbose: 0
+                });
+            } catch (error) {
+                console.error('訓練數據加載失敗:', error);
+                throw error;
+            }
+        }
+
+        function getWeekNumber(date) {
+            const diff = Math.floor((date - TRAINING_START) / 86400000);
+            return Math.floor(diff / 7) + 1;
+        }
+
+        function isLastWeekOfMonth(date) {
+            const nextMonth = new Date(date.getFullYear(), date.getMonth() + 1, 1);
+            const lastDay = new Date(nextMonth - 86400000);
+            return date.getDate() > (lastDay.getDate() - 7);
+        }
+
+        function applyIntensity(schedule, date) {
+            if(schedule.rest) return schedule;
+            
+            const weekNumber = getWeekNumber(date);
+            const isDeloadWeek = isLastWeekOfMonth(date);
+            const isIntensityWeek = weekNumber % 2 === 0;
+
+            let multiplier = 1;
+            if(isDeloadWeek) {
+                multiplier = 1 - (DELOAD_DECREASE.min + Math.random()*(DELOAD_DECREASE.max - DELOAD_DECREASE.min))/100;
+            } else if(isIntensityWeek) {
+                multiplier = 1 + (INTENSITY_INCREASE.min + Math.random()*(INTENSITY_INCREASE.max - INTENSITY_INCREASE.min))/100;
+            }
+
+            ['swim', 'bike', 'run'].forEach(activity => {
+                if(schedule[activity]) {
+                    schedule[activity] = Math.max(1, Math.round(schedule[activity] * multiplier));
+                }
+            });
+            return schedule;
+        }
+
+        // 若日期小於訓練起始日則回傳休息，
+        // 若該日期存在於 buildAprilSchedule（預定義資料）中則直接回傳，
+        // 否則使用神經網路預測並調整訓練量（若日期在預定義最後一天之後）
+        async function predict(date) {
+            try {
+                const dayDiff = Math.floor((date - TRAINING_START) / 86400000);
+                if(dayDiff < 0 || dayDiff >= DAYS_TOTAL) return {rest:1};
+
+                const predefined = getPredefinedSchedule(date);
+                if(predefined) return predefined;
+
+                const prediction = await neuralPrediction(date);
+                const formatted = formatPrediction(prediction, date);
+                return applyIntensity(formatted, date);
+            } catch (error) {
+                console.error('預測錯誤:', error);
+                return {rest: true};
+            }
+        }
+
+        // 依據月份與日期，若該日期有預定義資料 (buildFebruary、buildMarch、buildApril) 則返回對應課表，否則返回 null
+        function getPredefinedSchedule(date) {
+            const schedules = {
+                '2025-2': buildFebruarySchedule(),
+                '2025-3': buildMarchSchedule(),
+                '2025-4': buildAprilSchedule()
+            };
+            
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            const key = `2025-${month}`;
+            if(schedules[key]) {
+                const entry = schedules[key].find(d => d.day === day);
+                if(entry) {
+                    if(date.getDay() === 1) return { rest: true };
+                    return { 
+                        swim: entry.swim || 0,
+                        bike: entry.bike || 0,
+                        run: entry.run || 0,
+                        rest: entry.rest || false
+                    };
+                }
+            }
+            return null;
+        }
+
+        async function neuralPrediction(date) {
+            const dayDiff = Math.floor((date - TRAINING_START) / 86400000);
+            const progress = dayDiff / DAYS_TOTAL;
+            const dayOfWeek = date.getDay();
+            
+            const input = [
+                progress,
+                dayOfWeek/7,
+                Math.sin(progress * Math.PI * 2),
+                (dayOfWeek === 0 || dayOfWeek === 6) ? 1 : 0,
+                0
+            ];
+
+            const prediction = model.predict(tf.tensor2d([input]));
+            const [swim, bike, run, rest] = (await prediction.array())[0];
+            
+            return {
+                swim: Math.round(Math.max(0, swim)),
+                bike: Math.round(Math.max(0, bike)),
+                run: Math.round(Math.max(0, run)),
+                rest: rest > 0.7
+            };
+        }
+
+        function formatPrediction(prediction, date) {
+            const dayOfWeek = date.getDay();
+            if(dayOfWeek === 1) return { rest: true };
+            
+            const isWeekend = [0,6].includes(dayOfWeek);
+            const result = {rest: prediction.rest};
+            if(result.rest) return result;
+
+            let activities = [];
+            if(prediction.swim > 0) activities.push(['swim', prediction.swim]);
+            if(prediction.bike > 0) activities.push(['bike', prediction.bike]);
+            if(prediction.run > 0) activities.push(['run', prediction.run]);
+
+            if(isWeekend) {
+                activities = activities.sort((a,b) => b[1] - a[1]).slice(0, 2);
+                if(activities.length > 1) {
+                    activities = activities.map(([act, val]) => {
+                        const maxValues = {swim: 3, bike: 100, run: 15};
+                        return [act, Math.min(val, maxValues[act])];
+                    });
+                }
+            } else {
+                activities = activities.slice(0, 1);
+            }
+
+            activities.forEach(([act, val]) => result[act] = val);
+            return result;
+        }
+
+        function formatSchedule(schedule) {
+            if(schedule.rest) return "休息日";
+            const lines = [];
+            if(schedule.swim) lines.push(`游泳: ${schedule.swim}km`);
+            if(schedule.bike) lines.push(`自行車: ${schedule.bike}km`);
+            if(schedule.run) lines.push(`跑步: ${schedule.run}km`);
+            return lines.join('\n') || "恢復性訓練";
+        }
+
+        function buildFebruarySchedule() {
+            return [
+                {day: 1, swim: 2}, {day: 2, bike: 30}, {day: 3, run: 10},
+                {day: 4, rest: true}, {day: 5, swim: 3}, {day: 6, bike: 40},
+                {day: 7, run: 12}, {day: 8, rest: true}, {day: 9, swim: 2},
+                {day: 10, bike: 50, isBrick: true}, {day: 11, run: 15},
+                {day: 12, rest: true}, {day: 13, swim: 3}, {day: 14, bike: 60},
+                {day: 15, run: 18}, {day: 16, rest: true}, {day: 17, swim: 4},
+                {day: 18, bike: 70, isBrick: true}, {day: 19, run: 20},
+                {day: 20, rest: true}, {day: 21, swim: 3}, {day: 22, bike: 80},
+                {day: 23, run: 22}, {day: 24, rest: true}, {day: 25, swim: 4},
+                {day: 26, bike: 90, isBrick: true}, {day: 27, run: 25},
+                {day: 28, rest: true}
+            ];
+        }
+
+        function buildMarchSchedule() {
+            return [
+                {day: 1, bike: 100}, {day: 2, run: 28}, {day: 3, swim: 4},
+                {day: 4, rest: true}, {day: 5, bike: 110}, {day: 6, run: 30},
+                {day: 7, swim: 5}, {day: 8, rest: true}, {day: 9, bike: 120},
+                {day: 10, run: 32, isBrick: true}, {day: 11, swim: 5},
+                {day: 12, rest: true}, {day: 13, bike: 130}, {day: 14, run: 35},
+                {day: 15, swim: 5}, {day: 16, rest: true}, {day: 17, bike: 140},
+                {day: 18, run: 38, isBrick: true}, {day: 19, swim: 5},
+                {day: 20, rest: true}, {day: 21, bike: 150}, {day: 22, run: 40},
+                {day: 23, swim: 5}, {day: 24, rest: true}, {day: 25, bike: 160},
+                {day: 26, run: 42, isBrick: true}, {day: 27, swim: 5},
+                {day: 28, rest: true}, {day: 29, bike: 170}, {day: 30, run: 45},
+                {day: 31, swim: 5}
+            ];
+        }
+
+        function buildAprilSchedule() {
+            return [
+                {day: 1, run: 30}, {day: 2, swim: 3}, {day: 3, bike: 100},
+                {day: 4, rest: true}, {day: 5, run: 25}, {day: 6, swim: 2},
+                {day: 7, bike: 80}, {day: 8, rest: true}, {day: 9, run: 20},
+                {day: 10, swim: 2}, {day: 11, bike: 60}, {day: 12, rest: true},
+                {day: 13, run: 15}, {day: 14, swim: 2}, {day: 15, bike: 40},
+                {day: 16, rest: true}, {day: 17, run: 10}, {day: 18, swim: 1},
+                {day: 19, bike: 30}, {day: 20, rest: true}, {day: 21, run: 8},
+                {day: 22, swim: 1}, {day: 23, bike: 20}, {day: 24, rest: true},
+                {day: 25, run: 5}, {day: 26, rest: true}
+            ];
+        }
+
+        async function showTodaySchedule() {
+            try {
+                const today = new Date();
+                const schedule = await predict(today);
+                addMessageToChat(`本日課表 (${today.toLocaleDateString()}):\n${formatSchedule(schedule)}`);
+            } catch (error) {
+                addMessageToChat("課表獲取失敗，請稍後重試");
+                console.error(error);
+            }
+        }
+
+        // 修改後的 showWeekSchedule：將本週所有資料整合成一個訊息框顯示
+        async function showWeekSchedule() {
+            try {
+                const today = new Date();
+                const weekStart = new Date(today);
+                weekStart.setDate(today.getDate() - today.getDay() + 1);
+                
+                let weekMessage = "本週訓練課表：\n\n";
+                for (let i = 0; i < 7; i++) {
+                    const day = new Date(weekStart);
+                    day.setDate(weekStart.getDate() + i);
+                    const schedule = await predict(day);
+                    weekMessage += `${day.toLocaleDateString()}:\n${formatSchedule(schedule)}\n\n`;
+                }
+                addMessageToChat(weekMessage);
+            } catch (error) {
+                addMessageToChat("週課表獲取失敗，請稍後重試");
+                console.error(error);
+            }
+        }
+    </script>
+</body>
+</html>

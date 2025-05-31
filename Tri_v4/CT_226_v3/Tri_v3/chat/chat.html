@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Training Chatbot</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f3f4f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .chat-container {
+            width: 350px;
+            height: 500px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            display: flex;
+            align-items: center;
+            padding: 10px 15px;
+            background-color: #2563eb;
+            color: white;
+            font-weight: bold;
+        }
+
+        .chat {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .message {
+            display: flex;
+            align-items: flex-end;
+        }
+
+        .message.user {
+            flex-direction: row-reverse;
+        }
+
+        .bubble {
+            max-width: 70%;
+            padding: 10px 15px;
+            border-radius: 15px;
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .bubble.user {
+            background-color: #2563eb;
+            color: white;
+            border-top-right-radius: 0;
+        }
+
+        .bubble.bot {
+            background-color: #e5e7eb;
+            color: #1f2937;
+            border-top-left-radius: 0;
+            white-space: pre-wrap; /* Preserve line breaks */
+        }
+
+        .input-container {
+            padding: 10px;
+            border-top: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            background-color: #f9fafb;
+        }
+
+        .input-container input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #d1d5db;
+            border-radius: 20px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .input-container button {
+            background-color: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            margin-left: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        .input-container button:hover {
+            background-color: #1d4ed8;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="header">Training Chatbot</div>
+        <div class="chat" id="chat-box"></div>
+        <div class="input-container">
+            <input type="text" id="message-input" placeholder="Enter a date (e.g., Jan 26) or type '本週課表'">
+            <button id="send-button">➤</button>
+        </div>
+    </div>
+
+    <script>
+        const chatBox = document.getElementById('chat-box');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+
+        const weeklySchedule = [
+
+
+
+        const Triathlon_Training_Calendar_Styled = {
+    February_2025: [
+        { day: 1, activity: "Swim 2km" },
+        { day: 2, activity: "Bike 30km" },
+        { day: 3, activity: "Run 5km" },
+        { day: 4, activity: "Bike 40km" },
+        { day: 5, activity: "Run 8km" },
+        { day: 6, activity: "Swim 2.5km" },
+        { day: 7, activity: "Rest" },
+        { day: 8, activity: "Run 10km" },
+        { day: 9, activity: "Swim 3km" },
+        { day: 10, activity: "Bike 50km" },
+        { day: 11, activity: "Run 8km" },
+        { day: 12, activity: "Swim 2.5km" },
+        { day: 13, activity: "Bike 70km" },
+        { day: 14, activity: "Run 12km" },
+        { day: 15, activity: "Swim 3km" },
+        { day: 16, activity: "Bike 40km + Run 5km (brick)" },
+        { day: 17, activity: "Run 10km" },
+        { day: 18, activity: "Swim 2km" },
+        { day: 19, activity: "Bike 50km" },
+        { day: 20, activity: "Run 12km" },
+        { day: 21, activity: "Swim 2.5km" },
+        { day: 22, activity: "Bike 60km" },
+        { day: 23, activity: "Rest" },
+        { day: 24, activity: "Run 8km" },
+        { day: 25, activity: "Swim 2km" },
+        { day: 26, activity: "Bike 70km" },
+        { day: 27, activity: "Run 14km" },
+        { day: 28, activity: "Swim 3km" }
+    ],
+    March_2025: [
+        { day: 1, activity: "Bike 80km" },
+        { day: 2, activity: "Run 16km" },
+        { day: 3, activity: "Swim 3.2km" },
+        { day: 4, activity: "Bike 50km" },
+        { day: 5, activity: "Run 12km" },
+        { day: 6, activity: "Swim 2.5km" },
+        { day: 7, activity: "Rest" },
+        { day: 8, activity: "Run 18km" },
+        { day: 9, activity: "Swim 3km" },
+        { day: 10, activity: "Bike 60km" },
+        { day: 11, activity: "Run 10km" },
+        { day: 12, activity: "Swim 2.5km" },
+        { day: 13, activity: "Bike 90km" },
+        { day: 14, activity: "Run 20km" },
+        { day: 15, activity: "Swim 3km" },
+        { day: 16, activity: "Bike 50km + Run 8km (brick)" },
+        { day: 17, activity: "Run 15km" },
+        { day: 18, activity: "Swim 2km" },
+        { day: 19, activity: "Bike 70km" },
+        { day: 20, activity: "Run 18km" },
+        { day: 21, activity: "Swim 3km" },
+        { day: 22, activity: "Bike 100km" },
+        { day: 23, activity: "Rest" },
+        { day: 24, activity: "Run 12km" },
+        { day: 25, activity: "Swim 2.5km" },
+        { day: 26, activity: "Bike 110km" },
+        { day: 27, activity: "Run 22km" },
+        { day: 28, activity: "Swim 3.5km" },
+        { day: 29, activity: "Run 25km" },
+        { day: 30, activity: "Swim 3km" },
+        { day: 31, activity: "Bike 120km" }
+    ],
+    April_2025: [
+        { day: 1, activity: "Run 10km" },
+        { day: 2, activity: "Swim 2km" },
+        { day: 3, activity: "Bike 50km" },
+        { day: 4, activity: "Run 8km" },
+        { day: 5, activity: "Swim 3km" },
+        { day: 6, activity: "Bike 70km" },
+        { day: 7, activity: "Rest" },
+        { day: 8, activity: "Run 12km" },
+        { day: 9, activity: "Swim 3.5km" },
+        { day: 10, activity: "Bike 60km" },
+        { day: 11, activity: "Run 10km" },
+        { day: 12, activity: "Swim 2.5km" },
+        { day: 13, activity: "Bike 80km" },
+        { day: 14, activity: "Run 15km" },
+        { day: 15, activity: "Swim 3km" },
+        { day: 16, activity: "Bike 40km + Run 5km (brick)" },
+        { day: 17, activity: "Run 10km" },
+        { day: 18, activity: "Swim 2km" },
+        { day: 19, activity: "Bike 60km" },
+        { day: 20, activity: "Run 8km" },
+        { day: 21, activity: "Swim 3km" },
+        { day: 22, activity: "Bike 40km" },
+        { day: 23, activity: "Rest" },
+        { day: 24, activity: "Run 6km" },
+        { day: 25, activity: "Swim 1.5km" },
+        { day: 26, activity: "Triathlon 226km Race" },
+        { day: 27, activity: "Recovery swim 1km" },
+        { day: 28, activity: "Rest" },
+        { day: 29, activity: "Light bike 30km" },
+        { day: 30, activity: "Run 5km" }
+    ]
+};
+
+
+
+
+
+
+
+            "Day 26: Bike 70km",
+            "Day 27: Run 14km",
+            "Day 28: Swim 3km",
+            "Day 29: No training planned",
+            "Day 30: No training planned",
+            "Day 31: No training planned",
+            "Day 1: Bike 80km"
+        ];
+
+        function formatSchedule() {
+            return weeklySchedule.join('\n');
+        }
+
+        function getDaySchedule(date) {
+            const dateParts = date.split(' ');
+            const day = parseInt(dateParts[1], 10);
+            if (day >= 26 && day <= 31) {
+                return weeklySchedule[day - 26];
+            } else {
+                return "No training on this date.";
+            }
+        }
+
+        function addMessageToChat(messageText, isUser) {
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', isUser ? 'user' : 'bot');
+
+            const bubbleDiv = document.createElement('div');
+            bubbleDiv.classList.add('bubble', isUser ? 'user' : 'bot');
+            bubbleDiv.textContent = messageText;
+
+            messageDiv.appendChild(bubbleDiv);
+            chatBox.appendChild(messageDiv);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        function sendWeeklySchedule() {
+            addMessageToChat(formatSchedule(), false);
+        }
+
+        sendButton.addEventListener('click', () => {
+            const messageText = messageInput.value.trim();
+            if (messageText) {
+                addMessageToChat(messageText, true);
+                messageInput.value = '';
+
+                if (messageText === '本週課表') {
+                    sendWeeklySchedule();
+                } else if (/\b(\d{1,2})\b/.test(messageText)) {
+                    const dateMatch = messageText.match(/\b(\d{1,2})\b/);
+                    if (dateMatch) {
+                        const daySchedule = getDaySchedule(messageText);
+                        addMessageToChat(daySchedule, false);
+                    } else {
+                        addMessageToChat("Sorry, I couldn't find the date in the format you provided.", false);
+                    }
+                } else {
+                    addMessageToChat("Sorry, I don't understand that command.", false);
+                }
+            }
+        });
+
+        messageInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                sendButton.click();
+            }
+        });
+    </script>
+</body>
+</html>

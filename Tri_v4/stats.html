@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>統計 - 三項都會累</title>
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow: hidden;
+            background: linear-gradient(135deg, #232526 0%, #414345 100%);
+        }
+        body {
+            width: 100vw;
+            min-height: 100dvh;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 420px;
+            height: 100dvh;
+            min-height: 0;
+            background: rgba(34, 40, 49, 0.98);
+            border-radius: 22px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            overflow: hidden;
+            border: 1.5px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            box-sizing: border-box;
+            padding-top: env(safe-area-inset-top);
+            position: relative;
+        }
+        .header {
+            width: 100%;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            color: white;
+            text-align: center;
+            padding: 20px 0 16px 0;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .content {
+            flex: 1;
+            width: 100%;
+            padding: 20px;
+            padding-bottom: 80px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        /* 自定義滾動條樣式 */
+        .content::-webkit-scrollbar {
+            width: 8px;
+        }
+        .content::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+            border-radius: 4px;
+        }
+        .content::-webkit-scrollbar-thumb {
+            background: rgba(0,188,212,0.3);
+            border-radius: 4px;
+        }
+        .content::-webkit-scrollbar-thumb:hover {
+            background: rgba(0,188,212,0.5);
+        }
+        /* Firefox 滾動條樣式 */
+        .content {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,188,212,0.3) rgba(255,255,255,0.05);
+        }
+        .card {
+            background: rgba(255,255,255,0.05);
+            border-radius: 16px;
+            padding: 20px;
+            color: #fff;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255,255,255,0.08);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        }
+        .card h2 {
+            margin: 0 0 12px 0;
+            color: #00bcd4;
+            font-size: 18px;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .stat-item {
+            background: rgba(0,188,212,0.1);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00bcd4;
+            margin-bottom: 4px;
+        }
+        .stat-label {
+            font-size: 12px;
+            color: #b0bec5;
+        }
+        .chart-container {
+            width: 100%;
+            height: 200px;
+            margin-top: 12px;
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+            justify-content: space-around;
+            gap: 8px;
+            position: relative;
+        }
+        .chart-col {
+            flex: 1 1 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            height: 100%;
+        }
+        .chart-bar {
+            width: 80%;
+            min-height: 4px;
+            background: linear-gradient(90deg, #12214e 0%, #078282 100%);
+            border-radius: 8px 8px 0 0;
+            transition: height 0.3s ease;
+            margin-bottom: 6px;
+        }
+        .chart-label {
+            width: 100%;
+            text-align: center;
+            color: #b0bec5;
+            font-size: 12px;
+            margin-top: 2px;
+            margin-bottom: 0;
+            position: static;
+        }
+        .nav-buttons {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px;
+            background: rgba(34, 40, 49, 0.98);
+            border-top: 1px solid rgba(255,255,255,0.08);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .nav-button {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #b0bec5;
+            text-decoration: none;
+            font-size: 12px;
+            padding: 8px;
+            transition: color 0.3s;
+            flex: 1;
+            text-align: center;
+            position: relative;
+        }
+        .nav-button.active {
+            color: #00bcd4;
+        }
+        .nav-button img {
+            width: 24px;
+            height: 24px;
+            margin-bottom: 4px;
+        }
+        /* 聊天按鈕特殊樣式 */
+        .nav-button[href*="chat"] {
+            position: relative;
+            margin-top: 0;
+            min-height: 54px;
+        }
+        .nav-button[href*="chat"] img {
+            position: absolute;
+            top: -18px;
+            
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #00bcd4 0%, #2196f3 100%);
+            border-radius: 50%;
+            padding: 8px;
+            box-shadow: 0 4px 12px rgba(0,188,212,0.3),
+                        inset 0 -2px 6px rgba(0,0,0,0.2),
+                        inset 0 2px 6px rgba(255,255,255,0.2);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .nav-button[href*="chat"]:hover img {
+            transform: translateY(-2px) scale(1.05);
+            box-shadow: 0 6px 16px rgba(0,188,212,0.4),
+                        inset 0 -2px 6px rgba(0,0,0,0.2),
+                        inset 0 2px 6px rgba(255,255,255,0.2);
+        }
+        .nav-button span {
+            position: absolute;
+            bottom: 8px;
+            left: 0;
+            right: 0;
+            text-align: center;
+            color: #fff;
+        }
+        .nav-button:hover span,
+        .nav-button.active span {
+            color: #00bcd4;
+        }
+        .nav-button[href*="chat"] span {
+            font-weight: 600;
+        }
+        @media (max-width: 500px) {
+            .container {
+                max-width: 100vw;
+                height: 100dvh;
+                min-height: 0;
+                border-radius: 0;
+                padding-bottom: 60px;
+            }
+            .nav-buttons {
+                max-width: 100vw;
+                border-radius: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">訓練統計</div>
+        <div class="content">
+            <div class="card">
+                <h2>本月統計</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="monthlySwim">0</div>
+                        <div class="stat-label">游泳 (km)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="monthlyBike">0</div>
+                        <div class="stat-label">騎車 (km)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="monthlyRun">0</div>
+                        <div class="stat-label">跑步 (km)</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="monthlyTotal">0</div>
+                        <div class="stat-label">總計 (km)</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>訓練分布</h2>
+                <div class="chart-container">
+                    <div class="chart-col">
+                        <div class="chart-bar" id="swimBar" style="height: 0%;"></div>
+                        <div class="chart-label">游泳</div>
+                    </div>
+                    <div class="chart-col">
+                        <div class="chart-bar" id="bikeBar" style="height: 0%;"></div>
+                        <div class="chart-label">騎車</div>
+                    </div>
+                    <div class="chart-col">
+                        <div class="chart-bar" id="runBar" style="height: 0%;"></div>
+                        <div class="chart-label">跑步</div>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <h2>訓練目標進度</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <div class="stat-value" id="swimProgress">0%</div>
+                        <div class="stat-label">游泳進度</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="bikeProgress">0%</div>
+                        <div class="stat-label">騎車進度</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="runProgress">0%</div>
+                        <div class="stat-label">跑步進度</div>
+                    </div>
+                    <div class="stat-item">
+                        <div class="stat-value" id="totalProgress">0%</div>
+                        <div class="stat-label">總體進度</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="nav-buttons">
+            <a href="index.html" class="nav-button">
+                <img src="images/home.svg" alt="首頁">
+                <span>首頁</span>
+            </a>
+            <a href="stats.html" class="nav-button active">
+                <img src="images/stats.svg" alt="統計">
+                <span>統計</span>
+            </a>
+            <a href="chat/chat_v5_CT226.html" class="nav-button">
+                <img src="images/chat.svg" alt="聊天">
+                <span>聊天</span>
+            </a>
+            <a href="clendar/clendar.html" class="nav-button">
+                <img src="images/calendar.svg" alt="日曆">
+                <span>日曆</span>
+            </a>
+            <a href="membership/membership.html" class="nav-button">
+                <img src="images/user.svg" alt="會員">
+                <span>會員</span>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 取得目前登入用戶
+            function getCurrentUser() {
+                return localStorage.getItem('currentUser');
+            }
+
+            // 計算本月統計
+            function calculateMonthlyStats() {
+                const currentUser = getCurrentUser();
+                let events = {};
+                if (currentUser) {
+                    events = JSON.parse(localStorage.getItem(`calendarEvents_${currentUser}`) || '{}');
+                } else {
+                    events = JSON.parse(localStorage.getItem('calendarEvents') || '{}');
+                }
+                const today = new Date();
+                const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+                
+                let monthlySwim = 0;
+                let monthlyBike = 0;
+                let monthlyRun = 0;
+
+                for (let date = new Date(startOfMonth); date <= today; date.setDate(date.getDate() + 1)) {
+                    const dateKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                    
+                    if (events[dateKey]) {
+                        events[dateKey].forEach(event => {
+                            switch(event.type) {
+                                case '游泳':
+                                    monthlySwim += Number(event.distance) || 0;
+                                    break;
+                                case '騎車':
+                                    monthlyBike += Number(event.distance) || 0;
+                                    break;
+                                case '跑步':
+                                    monthlyRun += Number(event.distance) || 0;
+                                    break;
+                            }
+                        });
+                    }
+                }
+
+                const total = monthlySwim + monthlyBike + monthlyRun;
+                const maxValue = Math.max(monthlySwim, monthlyBike, monthlyRun) || 1; // 避免除以零
+
+                // 更新統計數據
+                document.getElementById('monthlySwim').textContent = monthlySwim.toFixed(1);
+                document.getElementById('monthlyBike').textContent = monthlyBike.toFixed(1);
+                document.getElementById('monthlyRun').textContent = monthlyRun.toFixed(1);
+                document.getElementById('monthlyTotal').textContent = total.toFixed(1);
+
+                // 更新圖表
+                document.getElementById('swimBar').style.height = `${(monthlySwim / maxValue * 100)}%`;
+                document.getElementById('bikeBar').style.height = `${(monthlyBike / maxValue * 100)}%`;
+                document.getElementById('runBar').style.height = `${(monthlyRun / maxValue * 100)}%`;
+
+                // 更新進度
+                const swimGoal = 50; // 游泳目標公里數
+                const bikeGoal = 500; // 騎車目標公里數
+                const runGoal = 100; // 跑步目標公里數
+                const totalGoal = swimGoal + bikeGoal + runGoal;
+
+                document.getElementById('swimProgress').textContent = `${Math.min(100, Math.round(monthlySwim / swimGoal * 100))}%`;
+                document.getElementById('bikeProgress').textContent = `${Math.min(100, Math.round(monthlyBike / bikeGoal * 100))}%`;
+                document.getElementById('runProgress').textContent = `${Math.min(100, Math.round(monthlyRun / runGoal * 100))}%`;
+                document.getElementById('totalProgress').textContent = `${Math.min(100, Math.round(total / totalGoal * 100))}%`;
+            }
+
+            // 初始化
+            calculateMonthlyStats();
+
+            // 設置當前頁面的導航按鈕為激活狀態
+            const currentPath = window.location.pathname.replace(/^\/+/, '');
+            document.querySelectorAll('.nav-button').forEach(button => {
+                const href = button.getAttribute('href').replace(/^\/+/, '');
+                if (
+                    (href === 'index.html' && (currentPath === '' || currentPath.endsWith('index.html')))
+                    || (href !== 'index.html' && currentPath.endsWith(href))
+                ) {
+                    button.classList.add('active');
+                } else {
+                    button.classList.remove('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 
